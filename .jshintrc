@@ -1,0 +1,30 @@
+{
+  "bitwise": true
+  , "camelcase": true
+  , "eqeqeq": true
+  , "immed": true
+
+  , "latedef": true
+  , "newcap": true
+  , "noarg": true
+  , "quotmark": "single"
+
+  , "regexp": false
+  , "undef": true
+  , "unused": true
+  , "strict": true
+  , "trailing": true
+
+  , "asi"       : true
+  , "boss"      : false
+  , "eqnull"    : true
+  , "expr"      : true
+  , "laxbreak"  : true
+  , "laxcomma"  : true
+  , "regexdash" : false
+  , "smarttabs" : false
+
+  , "node": true
+  , "predef": [
+  ]
+}
