@@ -48,13 +48,13 @@ var flatiron = require('flatiron')
 
 ## REST routes created
 
-> GET     /{collection.url}         collection in JSON
-> GET     /{collection.url}/*       model in JSON
-> POST    /{collection.url}         create a new model,
->                                   save to datastore and
-                                    in memory
-> PUT     /{collection.url}/*       update a model
-> DELETE  /{collection.url}/*       delete a model
+| Method  | Route                     | Response
+|---------|---------------------------|---------------------------|
+| GET     | /{collection.url}         | collection in JSON        |
+| GET     | /{collection.url}/*       | model in JSON
+| POST    | /{collection.url}         | create a new model, save to datastore and in memory
+| PUT     | /{collection.url}/*       | update a model
+| DELETE  | /{collection.url}/*       | delete a model
 
 ## Tests
 
