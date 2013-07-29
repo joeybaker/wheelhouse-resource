@@ -46,6 +46,34 @@ var flatiron = require('flatiron')
 
 ```
 
+### Complex Permissions
+In order to create complex permissions, you can return an object from the permissions option. The keys are the CRUD values are functions that have the request context, with the collection or model and request body as arguments.
+
+```js
+…
+, permissions: {
+  read: function(collectionJSON){
+    // from read, return an array of of models that are permissible
+    return _.filter(collectionJSON, function(model){
+      return model.readable === true
+    })
+  }
+  , create: function(collectionJSON, data){
+    // return a boolean
+    if (data.value === 'yup') return true
+  }
+  , update: function(modelJSON, data){
+    // return a boolean
+    if (data.value === 'yup') return true
+  }
+  , del: function(modelJSON){
+    // return a boolean
+    if (this.req.user.admin === true) return true
+  }
+}
+…
+```
+
 ## REST routes created
 
 | Method  | Route                     | Response
