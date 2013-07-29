@@ -1,8 +1,9 @@
-/* global describe, it, before, after */
+/* global describe, it, before, after, afterEach */
 'use strict';
 
 var chai = require('chai')
   , should = chai.should()
+  , expect = chai.expect
   , Resource = require('../index.js')
   , flatiron = require('flatiron')
   , app = flatiron.app
@@ -103,7 +104,7 @@ describe('Resources: ', function(){
       app.router.routes.collection['([_.()!\\ %@&a-zA-Z0-9-]+)'].get.should.exist
       app.router.routes.collection.post.should.exist
       app.router.routes.collection['([_.()!\\ %@&a-zA-Z0-9-]+)'].put.should.exist
-      app.router.routes.collection['([_.()!\\ %@&a-zA-Z0-9-]+)'].delete.should.exist
+      app.router.routes.collection['([_.()!\\ %@&a-zA-Z0-9-]+)']['delete'].should.exist
     })
 
     it('populates the collection on creation', function(){
@@ -188,7 +189,7 @@ describe('Resources: ', function(){
       })
     })
 
-    describe('permissions', function(){
+    describe('basic permissions', function(){
       var isBlocked = function(method, done){
           var id = ''
           if (method === 'put' || method === 'del') id = permCollection.last().id
@@ -200,7 +201,7 @@ describe('Resources: ', function(){
             should.not.exist(err)
 
             res.statusCode.should.equal(403)
-            body.status.should.equal(403)
+            expect(body.code).to.equal(403)
             should.not.exist(permCollection.findWhere({key: 'I should be blocked'}))
             permCollection.length.should.equal(1)
             done()
@@ -210,6 +211,10 @@ describe('Resources: ', function(){
           url: '/permCollection'
         })
         , permCollection = new PermCollection({id: 1, key: 'not affected'})
+
+      afterEach(function(){
+        app.router.routes = {}
+      })
 
       it('assigns default permissions of all public', function(){
         new Resource(permCollection, {
@@ -261,6 +266,151 @@ describe('Resources: ', function(){
 
       after(function(){
         permCollection.reset()
+      })
+    })
+
+    describe('complex permissions', function(){
+      var PermFilterCollection = Backbone.Collection.extend({
+          url: '/permFilterCollection'
+        })
+        , permFilterCollection = new PermFilterCollection()
+
+      before(function(){
+        _.each([1,2,3,4,5,6,7,8,9,10], function(i){
+          permFilterCollection.add({id: (100+i), key: 'value ' + i})
+        })
+      })
+      afterEach(function(){
+        app.router.routes = {}
+      })
+
+      it('reduces on reading a collection', function(done){
+        new Resource(permFilterCollection, {
+          app: app
+          , permissions: function(){
+            return {
+              read: function(collection){
+                return _.filter(collection, function(model){
+                  return model.id % 2
+                })
+              }
+            }
+          }
+        })
+
+        request.get({
+          url: 'http://localhost:' + port + '/permFilterCollection'
+          , json: true
+        }, function(err, res, body){
+          expect(err).to.not.exist
+
+          res.statusCode.should.equal(200)
+          body.length.should.equal((permFilterCollection.length / 2))
+          done()
+        })
+      })
+
+      it('rejects reading a reading a model that is not permitted', function(done){
+        new Resource(permFilterCollection, {
+          app: app
+          , permissions: function(){
+            return {
+              read: function(collection){
+                return _.filter(collection, function(model){
+                  return model.id % 2
+                })
+              }
+            }
+          }
+        })
+
+        request.get({
+          url: 'http://localhost:' + port + '/permFilterCollection/102'
+          , json: true
+        }, function(err, res, body){
+          expect(err).to.not.exist
+
+          expect(res.statusCode).to.equal(403)
+          expect(body.code).to.equal(403)
+          done()
+        })
+      })
+
+      it('rejects a create based on a filter', function(done){
+        new Resource(permFilterCollection, {
+          app: app
+          , permissions: function(){
+            return {
+              create: function(collection, body){
+                if (body.value === 'reject me!') return false
+                else return true
+              }
+            }
+          }
+        })
+
+        request.post({
+          url: 'http://localhost:' + port + '/permFilterCollection'
+          , json: {value: 'reject me!'}
+        }, function(err, res, body){
+          expect(err).to.not.exist
+
+          expect(res.statusCode).to.equal(403)
+          expect(body.code).to.equal(403)
+          done()
+        })
+      })
+
+      it('rejects an update based on a filter', function(done){
+        new Resource(permFilterCollection, {
+          app: app
+          , permissions: function(){
+            return {
+              update: function(collection, body){
+                if (body.value === 'reject me!') return false
+                else return true
+              }
+            }
+          }
+        })
+
+        request.put({
+          url: 'http://localhost:' + port + '/permFilterCollection/101'
+          , json: {value: 'reject me!'}
+        }, function(err, res, body){
+          expect(err).to.not.exist
+
+          expect(res.statusCode).to.equal(403)
+          expect(body.code).to.equal(403)
+          done()
+        })
+      })
+
+      it('rejects a delete based on a filter', function(done){
+        new Resource(permFilterCollection, {
+          app: app
+          , permissions: function(){
+            return {
+              del: function(model){
+                console.log(model)
+                if (model.id === 101) return false
+                else return true
+              }
+            }
+          }
+        })
+
+        request.del({
+          url: 'http://localhost:' + port + '/permFilterCollection/101'
+          , json: true
+        }, function(err, res, body){
+          expect(err).to.not.exist
+
+          expect(res.statusCode).to.equal(403)
+          expect(body.code).to.equal(403)
+          done()
+        })
+
       })
     })
 
@@ -331,9 +481,11 @@ describe('Resources: ', function(){
     })
 
     after(function(done){
-      collection.reset()
-      cache = {}
       app.server.close(done)
     })
+  })
+
+  after(function(){
+    cache = {}
   })
 })
