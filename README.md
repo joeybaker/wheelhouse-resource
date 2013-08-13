@@ -58,6 +58,7 @@ In order to create complex permissions, you can return an object from the permis
       return model.readable === true
     })
   }
+  // data is the incoming data from the POST request
   , create: function(collectionJSON, data){
     // return a boolean
     if (data.value === 'yup') return true
