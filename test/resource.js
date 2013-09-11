@@ -2,14 +2,15 @@
 'use strict';
 
 var chai = require('chai')
-  , should = chai.should()
-  , expect = chai.expect
   , Resource = require('../index.js')
   , flatiron = require('flatiron')
-  , app = flatiron.app
   , Backbone = require('backbone')
   , _ = require('lodash')
   , request = require('request')
+  , EventSource = require('eventsource')
+  , should = chai.should()
+  , expect = chai.expect
+  , app = flatiron.app
   , cache = {}
   , port = 9070
 
@@ -480,8 +481,34 @@ describe('Resources: ', function(){
       })
     })
 
+    describe.only('server sent events', function(){
+      it('client monitors the a whole collection', function(done){
+        var url = '/sse-collection'
+          , SSECollection = Backbone.Collection.extend({
+            url: url
+          })
+          , sseCollection = new SSECollection()
+          , clientEvents
+
+        ;new Resource(sseCollection, {app: app})
+        clientEvents = new EventSource('http://localhost:' + port + url)
+
+        sseCollection.add({id: 1, value: 'added'})
+
+        clientEvents.onmessage = function(e){
+          console.log('message', e.data)
+          done()
+        }
+        clientEvents.onerror = function(){
+          'error'.should.not.equal('error')
+        }
+
+      })
+    })
+
     after(function(done){
       app.server.close(done)
+      done()
     })
   })
 
