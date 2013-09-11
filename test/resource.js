@@ -482,28 +482,83 @@ describe('Resources: ', function(){
     })
 
     describe.only('server sent events', function(){
-      it('client monitors the a whole collection', function(done){
-        var url = '/sse-collection'
-          , SSECollection = Backbone.Collection.extend({
+      function setup(url){
+        var SSECollection = Backbone.Collection.extend({
             url: url
           })
           , sseCollection = new SSECollection()
           , clientEvents
 
+        // create a new resource
         ;new Resource(sseCollection, {app: app})
+        // fake being a client that can receive sse events
         clientEvents = new EventSource('http://localhost:' + port + url)
 
-        sseCollection.add({id: 1, value: 'added'})
+        return {clientEvents: clientEvents, collection: sseCollection}
+      }
 
-        clientEvents.onmessage = function(e){
-          console.log('message', e.data)
+      it('send an event when a model is added', function(done){
+        var config = setup('/sse-adds')
+          , clientEvents = config.clientEvents
+          , collection = config.collection
+
+        clientEvents.addEventListener('add', function(e){
+          expect(JSON.parse(e.data).id).to.equal(1)
           done()
-        }
-        clientEvents.onerror = function(){
-          'error'.should.not.equal('error')
-        }
+        })
 
+        clientEvents.on('open', function(){
+          collection.add({id: 1, value: 'added'})
+        })
+
+        clientEvents.onerror = function(e){
+          expect(e).to.not.exist
+        }
       })
+
+      it('send an event when a model is changed', function(done){
+        var config = setup('/sse-changes')
+          , clientEvents = config.clientEvents
+          , collection = config.collection
+
+        clientEvents.addEventListener('change', function(e){
+          expect(JSON.parse(e.data).id).to.equal(2)
+          expect(JSON.parse(e.data).value).to.equal('changed')
+          done()
+        })
+
+        clientEvents.on('open', function(){
+          collection.add({id: 2, value: 'added'})
+          collection.get(2).save('value', 'changed')
+        })
+
+        clientEvents.onerror = function(e){
+          expect(e).to.not.exist
+        }
+      })
+
+      it('send an event when a model is removed', function(done){
+        var config = setup('/sse-remove')
+          , clientEvents = config.clientEvents
+          , collection = config.collection
+
+        clientEvents.addEventListener('remove', function(e){
+          expect(JSON.parse(e.data).id).to.equal(3)
+          done()
+        })
+
+        clientEvents.on('open', function(){
+          collection.add({id: 3, value: 'added'})
+          collection.remove(3)
+        })
+
+        clientEvents.onerror = function(e){
+          expect(e).to.not.exist
+        }
+      })
+
+      it('only sends permissible models')
+      it('correctly disconnects')
     })
 
     after(function(done){
