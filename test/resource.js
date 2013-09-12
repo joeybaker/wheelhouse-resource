@@ -415,7 +415,6 @@ describe('Resources:', function(){
         , permissions: function(){
           return {
             del: function(model){
-              console.log(model)
               if (model.id === 101) return false
               else return true
             }
@@ -506,19 +505,19 @@ describe('Resources:', function(){
   })
 
   describe('server sent events', function(){
-    function setup(url, id){
+    function setup(url, id, options){
       var SSECollection = Backbone.Collection.extend({
           url: url
+          , model: Backbone.Model.extend({})
         })
         , sseCollection = new SSECollection()
         , clientEvents
+        , resource = new Resource(sseCollection, _.extend({app: app}, options || {}))
 
-      // create a new resource
-      ;new Resource(sseCollection, {app: app})
       // fake being a client that can receive sse events
-      clientEvents = new EventSource('http://localhost:' + port + path.join(url, id ? encodeURIComponent(id) : ''))
+      clientEvents = new EventSource('http://localhost:' + port + path.join(url, id ? encodeURIComponent(id) : '', '/subscribe'))
 
-      return {clientEvents: clientEvents, collection: sseCollection}
+      return {clientEvents: clientEvents, collection: sseCollection, resource: resource}
     }
 
     describe('monitoring a whole collection', function(){
@@ -529,6 +528,7 @@ describe('Resources:', function(){
 
         clientEvents.addEventListener('add', function(e){
           expect(JSON.parse(e.data).id).to.equal(1)
+          clientEvents.close()
           done()
         })
 
@@ -549,6 +549,7 @@ describe('Resources:', function(){
         clientEvents.addEventListener('change', function(e){
           expect(JSON.parse(e.data).id).to.equal(2)
           expect(JSON.parse(e.data).value).to.equal('changed')
+          clientEvents.close()
           done()
         })
 
@@ -569,6 +570,36 @@ describe('Resources:', function(){
 
         clientEvents.addEventListener('remove', function(e){
           expect(JSON.parse(e.data).id).to.equal(3)
+          clientEvents.close()
+          done()
+        })
+
+        clientEvents.on('open', function(){
+          collection.add({id: 3, value: 'added'})
+          collection.remove(3)
+        })
+
+        clientEvents.onerror = function(e){
+          expect(e).to.not.exist
+        }
+      })
+
+      // TODO
+      it.only('only sends permissible models', function(done){
+        var config = setup('/sse-permissions', null, {
+            read: function(coll){
+              // let's just pretend only odd numbered models are permissible
+              return _.filter(coll, function(model){
+                return model.id % 2
+              })
+            }
+          })
+          , clientEvents = config.clientEvents
+          , collection = config.collection
+
+        clientEvents.addEventListener('remove', function(e){
+          expect(JSON.parse(e.data).id).to.equal(3)
+          clientEvents.close()
           done()
         })
 
@@ -583,7 +614,7 @@ describe('Resources:', function(){
       })
     })
 
-    describe.only('monitoring a single model', function(){
+    describe('monitoring a single model', function(){
       it('sends an event when a model is changed', function(done){
         var config = setup('/sse-model-changes', 1)
           , clientEvents = config.clientEvents
@@ -594,6 +625,7 @@ describe('Resources:', function(){
         clientEvents.addEventListener('change', function(e){
           expect(JSON.parse(e.data).id).to.equal(1)
           expect(JSON.parse(e.data).value).to.equal('changed')
+          clientEvents.close()
           done()
         })
 
@@ -606,20 +638,21 @@ describe('Resources:', function(){
         }
       })
 
-      it('sends an event when a model is removed', function(done){
-        var config = setup('/sse-model-remove', 1)
+      it('sends an event when a model is destroyed', function(done){
+        var config = setup('/sse-model-destroy', 3, null)
           , clientEvents = config.clientEvents
           , collection = config.collection
 
-        collection.add({id: 1, value: 'added'})
+        collection.add({id: 3, value: 'added'})
 
-        clientEvents.addEventListener('remove', function(e){
-          expect(JSON.parse(e.data).id).to.equal(1)
+        clientEvents.addEventListener('destroy', function(e){
+          expect(JSON.parse(e.data).id).to.equal(3)
+          clientEvents.close()
           done()
         })
 
         clientEvents.on('open', function(){
-          collection.remove(1)
+          collection.get(3).destroy()
         })
 
         clientEvents.onerror = function(e){
@@ -628,9 +661,21 @@ describe('Resources:', function(){
       })
     })
 
+    it('allows many connections', function(done){
+      var connections = []
+        , count = 10
+        , close = _.after(count, function(){
+          connections.forEach(function(conn){
+            conn.close()
+          })
+          done()
+        })
 
-    it('only sends permissible models')
-    it('correctly disconnects')
+      for (var i = count; i > 0; i--){
+        connections[i] = setup('/connection-test').clientEvents
+        connections[i].on('open', close)
+      }
+    })
   })
 
   after(function(done){
