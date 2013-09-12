@@ -106,7 +106,7 @@ describe('Resources:', function(){
       collection.create({key: 'value1'})
       collection.create({key: 'value2'})
 
-      ;new Resource(collection, {app: app })
+      ;new Resource(collection, {app: app})
       return collection
     }
 
@@ -237,14 +237,6 @@ describe('Resources:', function(){
 
     afterEach(function(){
       app.router.routes = {}
-    })
-
-    it('assigns default permissions of all public', function(){
-      new Resource(permCollection, {
-        app: app
-      })
-
-      permCollection.resource.permissions().should.eql(['create', 'read', 'update', 'del'])
     })
 
     it('blocks access to create', function(done){
