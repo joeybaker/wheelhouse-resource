@@ -55,6 +55,10 @@ describe('Resources: ', function(){
     app.Backbone = Backbone
   })
 
+  before(function(done){
+    app.start(port, done)
+  })
+
   describe('prerequisites', function(){
     var Collection = Backbone.Collection.extend({
         url: '/collection'
@@ -95,9 +99,6 @@ describe('Resources: ', function(){
       })
       , collection = new Collection([{key: 'value1'}, {key: 'value2'}])
 
-    before(function(done){
-      app.start(port, done)
-    })
 
     it('adds routes to the router', function(){
       new Resource(collection, {app: app })
@@ -189,232 +190,234 @@ describe('Resources: ', function(){
         done()
       })
     })
+  })
 
-    describe('basic permissions', function(){
-      var isBlocked = function(method, done){
-          var id = ''
-          if (method === 'put' || method === 'del') id = permCollection.last().id
+  describe('basic permissions', function(){
+    var isBlocked = function(method, done){
+        var id = ''
+        if (method === 'put' || method === 'del') id = permCollection.last().id
 
-          request[method]({
-            url: 'http://localhost:' + port + '/permCollection/' + id
-            , json: {key: 'I should be blocked'}
-          }, function(err, res, body){
-            should.not.exist(err)
+        request[method]({
+          url: 'http://localhost:' + port + '/permCollection/' + id
+          , json: {key: 'I should be blocked'}
+        }, function(err, res, body){
+          should.not.exist(err)
 
-            res.statusCode.should.equal(403)
-            expect(body.code).to.equal(403)
-            should.not.exist(permCollection.findWhere({key: 'I should be blocked'}))
-            permCollection.length.should.equal(1)
-            done()
-          })
+          res.statusCode.should.equal(403)
+          expect(body.code).to.equal(403)
+          should.not.exist(permCollection.findWhere({key: 'I should be blocked'}))
+          permCollection.length.should.equal(1)
+          done()
+        })
+      }
+      , PermCollection = Backbone.Collection.extend({
+        url: '/permCollection'
+      })
+      , permCollection = new PermCollection({id: 1, key: 'not affected'})
+
+    afterEach(function(){
+      app.router.routes = {}
+    })
+
+    it('assigns default permissions of all public', function(){
+      new Resource(permCollection, {
+        app: app
+      })
+
+      permCollection.resource.permissions().should.eql(['create', 'read', 'update', 'del'])
+    })
+
+    it('blocks access to create', function(done){
+      new Resource(permCollection, {
+        app: app
+        , permissions: function(){
+          return ['read', 'update', 'del']
         }
-        , PermCollection = Backbone.Collection.extend({
-          url: '/permCollection'
-        })
-        , permCollection = new PermCollection({id: 1, key: 'not affected'})
-
-      afterEach(function(){
-        app.router.routes = {}
       })
+      isBlocked('post', done)
+    })
 
-      it('assigns default permissions of all public', function(){
-        new Resource(permCollection, {
-          app: app
-        })
-
-        permCollection.resource.permissions().should.eql(['create', 'read', 'update', 'del'])
+    it('blocks access to read', function(done){
+      new Resource(permCollection, {
+        app: app
+        , permissions: function(){
+          return ['create', 'update', 'del']
+        }
       })
+      isBlocked('get', done)
+    })
 
-      it('blocks access to create', function(done){
-        new Resource(permCollection, {
-          app: app
-          , permissions: function(){
-            return ['read', 'update', 'del']
+    it('blocks access to update', function(done){
+      new Resource(permCollection, {
+        app: app
+        , permissions: function(){
+          return ['create', 'read', 'del']
+        }
+      })
+      isBlocked('put', done)
+    })
+
+    it('blocks access to delete', function(done){
+      new Resource(permCollection, {
+        app: app
+        , permissions: function(){
+          return ['create', 'read', 'update']
+        }
+      })
+      isBlocked('del', done)
+    })
+
+    after(function(){
+      permCollection.reset()
+    })
+  })
+
+  describe('complex permissions', function(){
+    var PermFilterCollection = Backbone.Collection.extend({
+        url: '/permFilterCollection'
+      })
+      , permFilterCollection = new PermFilterCollection()
+
+    before(function(){
+      _.each([1,2,3,4,5,6,7,8,9,10], function(i){
+        permFilterCollection.add({id: (100+i), key: 'value ' + i})
+      })
+    })
+    afterEach(function(){
+      app.router.routes = {}
+    })
+
+    it('reduces on reading a collection', function(done){
+      new Resource(permFilterCollection, {
+        app: app
+        , permissions: function(){
+          return {
+            read: function(collection){
+              return _.filter(collection, function(model){
+                return model.id % 2
+              })
+            }
           }
-        })
-        isBlocked('post', done)
+        }
       })
 
-      it('blocks access to read', function(done){
-        new Resource(permCollection, {
-          app: app
-          , permissions: function(){
-            return ['create', 'update', 'del']
-          }
-        })
-        isBlocked('get', done)
-      })
+      request.get({
+        url: 'http://localhost:' + port + '/permFilterCollection'
+        , json: true
+      }, function(err, res, body){
+        expect(err).to.not.exist
 
-      it('blocks access to update', function(done){
-        new Resource(permCollection, {
-          app: app
-          , permissions: function(){
-            return ['create', 'read', 'del']
-          }
-        })
-        isBlocked('put', done)
-      })
-
-      it('blocks access to delete', function(done){
-        new Resource(permCollection, {
-          app: app
-          , permissions: function(){
-            return ['create', 'read', 'update']
-          }
-        })
-        isBlocked('del', done)
-      })
-
-      after(function(){
-        permCollection.reset()
+        res.statusCode.should.equal(200)
+        body.length.should.equal((permFilterCollection.length / 2))
+        done()
       })
     })
 
-    describe('complex permissions', function(){
-      var PermFilterCollection = Backbone.Collection.extend({
-          url: '/permFilterCollection'
-        })
-        , permFilterCollection = new PermFilterCollection()
-
-      before(function(){
-        _.each([1,2,3,4,5,6,7,8,9,10], function(i){
-          permFilterCollection.add({id: (100+i), key: 'value ' + i})
-        })
-      })
-      afterEach(function(){
-        app.router.routes = {}
-      })
-
-      it('reduces on reading a collection', function(done){
-        new Resource(permFilterCollection, {
-          app: app
-          , permissions: function(){
-            return {
-              read: function(collection){
-                return _.filter(collection, function(model){
-                  return model.id % 2
-                })
-              }
+    it('rejects reading a reading a model that is not permitted', function(done){
+      new Resource(permFilterCollection, {
+        app: app
+        , permissions: function(){
+          return {
+            read: function(collection){
+              return _.filter(collection, function(model){
+                return model.id % 2
+              })
             }
           }
-        })
-
-        request.get({
-          url: 'http://localhost:' + port + '/permFilterCollection'
-          , json: true
-        }, function(err, res, body){
-          expect(err).to.not.exist
-
-          res.statusCode.should.equal(200)
-          body.length.should.equal((permFilterCollection.length / 2))
-          done()
-        })
+        }
       })
 
-      it('rejects reading a reading a model that is not permitted', function(done){
-        new Resource(permFilterCollection, {
-          app: app
-          , permissions: function(){
-            return {
-              read: function(collection){
-                return _.filter(collection, function(model){
-                  return model.id % 2
-                })
-              }
-            }
-          }
-        })
+      request.get({
+        url: 'http://localhost:' + port + '/permFilterCollection/102'
+        , json: true
+      }, function(err, res, body){
+        expect(err).to.not.exist
 
-        request.get({
-          url: 'http://localhost:' + port + '/permFilterCollection/102'
-          , json: true
-        }, function(err, res, body){
-          expect(err).to.not.exist
-
-          expect(res.statusCode).to.equal(403)
-          expect(body.code).to.equal(403)
-          done()
-        })
-      })
-
-      it('rejects a create based on a filter', function(done){
-        new Resource(permFilterCollection, {
-          app: app
-          , permissions: function(){
-            return {
-              create: function(collection, body){
-                if (body.value === 'reject me!') return false
-                else return true
-              }
-            }
-          }
-        })
-
-        request.post({
-          url: 'http://localhost:' + port + '/permFilterCollection'
-          , json: {value: 'reject me!'}
-        }, function(err, res, body){
-          expect(err).to.not.exist
-
-          expect(res.statusCode).to.equal(403)
-          expect(body.code).to.equal(403)
-          done()
-        })
-      })
-
-      it('rejects an update based on a filter', function(done){
-        new Resource(permFilterCollection, {
-          app: app
-          , permissions: function(){
-            return {
-              update: function(collection, body){
-                if (body.value === 'reject me!') return false
-                else return true
-              }
-            }
-          }
-        })
-
-        request.put({
-          url: 'http://localhost:' + port + '/permFilterCollection/101'
-          , json: {value: 'reject me!'}
-        }, function(err, res, body){
-          expect(err).to.not.exist
-
-          expect(res.statusCode).to.equal(403)
-          expect(body.code).to.equal(403)
-          done()
-        })
-      })
-
-      it('rejects a delete based on a filter', function(done){
-        new Resource(permFilterCollection, {
-          app: app
-          , permissions: function(){
-            return {
-              del: function(model){
-                console.log(model)
-                if (model.id === 101) return false
-                else return true
-              }
-            }
-          }
-        })
-
-        request.del({
-          url: 'http://localhost:' + port + '/permFilterCollection/101'
-          , json: true
-        }, function(err, res, body){
-          expect(err).to.not.exist
-
-          expect(res.statusCode).to.equal(403)
-          expect(body.code).to.equal(403)
-          done()
-        })
-
+        expect(res.statusCode).to.equal(403)
+        expect(body.code).to.equal(403)
+        done()
       })
     })
 
+    it('rejects a create based on a filter', function(done){
+      new Resource(permFilterCollection, {
+        app: app
+        , permissions: function(){
+          return {
+            create: function(collection, body){
+              if (body.value === 'reject me!') return false
+              else return true
+            }
+          }
+        }
+      })
+
+      request.post({
+        url: 'http://localhost:' + port + '/permFilterCollection'
+        , json: {value: 'reject me!'}
+      }, function(err, res, body){
+        expect(err).to.not.exist
+
+        expect(res.statusCode).to.equal(403)
+        expect(body.code).to.equal(403)
+        done()
+      })
+    })
+
+    it('rejects an update based on a filter', function(done){
+      new Resource(permFilterCollection, {
+        app: app
+        , permissions: function(){
+          return {
+            update: function(collection, body){
+              if (body.value === 'reject me!') return false
+              else return true
+            }
+          }
+        }
+      })
+
+      request.put({
+        url: 'http://localhost:' + port + '/permFilterCollection/101'
+        , json: {value: 'reject me!'}
+      }, function(err, res, body){
+        expect(err).to.not.exist
+
+        expect(res.statusCode).to.equal(403)
+        expect(body.code).to.equal(403)
+        done()
+      })
+    })
+
+    it('rejects a delete based on a filter', function(done){
+      new Resource(permFilterCollection, {
+        app: app
+        , permissions: function(){
+          return {
+            del: function(model){
+              console.log(model)
+              if (model.id === 101) return false
+              else return true
+            }
+          }
+        }
+      })
+
+      request.del({
+        url: 'http://localhost:' + port + '/permFilterCollection/101'
+        , json: true
+      }, function(err, res, body){
+        expect(err).to.not.exist
+
+        expect(res.statusCode).to.equal(403)
+        expect(body.code).to.equal(403)
+        done()
+      })
+
+    })
+  })
+
+  describe('config', function(){
     it('can find the collection name from regex', function(){
       var NameTest = Backbone.Collection.extend({
           url: '/api/v1/nameTest'
@@ -480,6 +483,7 @@ describe('Resources: ', function(){
         done()
       })
     })
+  })
 
     describe.only('server sent events', function(){
       function setup(url){
@@ -561,13 +565,12 @@ describe('Resources: ', function(){
       it('correctly disconnects')
     })
 
-    after(function(done){
-      app.server.close(done)
-      done()
     })
   })
 
-  after(function(){
+  after(function(done){
     cache = {}
+    app.server.close(done)
+    done()
   })
 })
