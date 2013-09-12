@@ -616,7 +616,7 @@ describe('Resources: ', function(){
 
   after(function(done){
     cache = {}
-    app.server.close(done)
+    app.server.close()
     done()
   })
 })
