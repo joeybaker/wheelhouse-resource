@@ -15,8 +15,8 @@ var chai = require('chai')
   , cache = {}
   , port = 9070
 
-describe('Resources: ', function(){
-  before(function(){
+describe('Resources:', function(){
+  before(function(done){
     app.use(flatiron.plugins.http)
     app.use(flatiron.plugins.log)
     app.router.configure({
@@ -54,9 +54,7 @@ describe('Resources: ', function(){
       }
     }
     app.Backbone = Backbone
-  })
 
-  before(function(done){
     app.start(port, done)
   })
 
@@ -95,14 +93,25 @@ describe('Resources: ', function(){
   })
 
   describe('a new resource', function(){
-    var Collection = Backbone.Collection.extend({
-        url: '/collection'
-      })
-      , collection = new Collection([{key: 'value1'}, {key: 'value2'}])
+    function setup(){
+      var Collection = Backbone.Collection.extend({
+          url: '/collection'
+          , model: Backbone.Model.extend({})
+        })
+        , collection = new Collection()
 
+      collection.reset()
+      cache = {}
+
+      collection.create({key: 'value1'})
+      collection.create({key: 'value2'})
+
+      ;new Resource(collection, {app: app })
+      return collection
+    }
 
     it('adds routes to the router', function(){
-      new Resource(collection, {app: app })
+      setup()
       app.router.routes.collection.get.should.exist
       app.router.routes.collection['([_.()!\\ %@&a-zA-Z0-9-]+)'].get.should.exist
       app.router.routes.collection.post.should.exist
@@ -128,6 +137,7 @@ describe('Resources: ', function(){
     })
 
     it('creates', function(done){
+      var collection = setup()
       request.post({
         url: 'http://localhost:' + port + '/collection'
         , json: {key: 'created!'}
@@ -140,32 +150,38 @@ describe('Resources: ', function(){
     })
 
     it('reads a collection', function(done){
+      setup()
       request.get({
         url: 'http://localhost:' + port + '/collection'
         , json: true
       }, function(err, res, body){
         should.not.exist(err)
-
         body.length.should.be.above(0)
-        _.last(body).key.should.equal('created!')
+        _.last(body).key.should.equal('value2')
         done()
       })
     })
 
     it('reads a model', function(done){
-      var id = collection.last().id
+      var collection = setup()
+        , id = collection.last().id
+
+      expect(collection).to.exist
+      expect(id).to.exist
+
       request.get({
         url: 'http://localhost:' + port + '/collection/' + id
         , json: true
       }, function(err, res, body){
         should.not.exist(err)
-
         body.id.should.equal(id)
         done()
       })
     })
 
     it('updates', function(done){
+      var collection = setup()
+
       collection.add({id: 1, key: 'not updated'})
       request.put({
         url: 'http://localhost:' + port + '/collection/1'
@@ -180,14 +196,17 @@ describe('Resources: ', function(){
     })
 
     it('deletes', function(done){
+      var collection = setup()
+        , id = collection.last().id
+
       request.del({
-        url: 'http://localhost:' + port + '/collection/1'
+        url: 'http://localhost:' + port + '/collection/' + id
         , json: true
       }, function(err, res, body){
         should.not.exist(err)
         should.not.exist(body)
-        should.not.exist(cache['/collection/1'])
-        should.not.exist(collection.get(1))
+        should.not.exist(cache['/collection/' + id])
+        should.not.exist(collection.get(id))
         done()
       })
     })
