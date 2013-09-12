@@ -8,6 +8,7 @@ var chai = require('chai')
   , _ = require('lodash')
   , request = require('request')
   , EventSource = require('eventsource')
+  , path = require('path')
   , should = chai.should()
   , expect = chai.expect
   , app = flatiron.app
@@ -485,23 +486,24 @@ describe('Resources: ', function(){
     })
   })
 
-    describe.only('server sent events', function(){
-      function setup(url){
-        var SSECollection = Backbone.Collection.extend({
-            url: url
-          })
-          , sseCollection = new SSECollection()
-          , clientEvents
+  describe('server sent events', function(){
+    function setup(url, id){
+      var SSECollection = Backbone.Collection.extend({
+          url: url
+        })
+        , sseCollection = new SSECollection()
+        , clientEvents
 
-        // create a new resource
-        ;new Resource(sseCollection, {app: app})
-        // fake being a client that can receive sse events
-        clientEvents = new EventSource('http://localhost:' + port + url)
+      // create a new resource
+      ;new Resource(sseCollection, {app: app})
+      // fake being a client that can receive sse events
+      clientEvents = new EventSource('http://localhost:' + port + path.join(url, id ? encodeURIComponent(id) : ''))
 
-        return {clientEvents: clientEvents, collection: sseCollection}
-      }
+      return {clientEvents: clientEvents, collection: sseCollection}
+    }
 
-      it('send an event when a model is added', function(done){
+    describe('monitoring a whole collection', function(){
+      it('sends an event when a model is added', function(done){
         var config = setup('/sse-adds')
           , clientEvents = config.clientEvents
           , collection = config.collection
@@ -520,7 +522,7 @@ describe('Resources: ', function(){
         }
       })
 
-      it('send an event when a model is changed', function(done){
+      it('sends an event when a model is changed', function(done){
         var config = setup('/sse-changes')
           , clientEvents = config.clientEvents
           , collection = config.collection
@@ -541,7 +543,7 @@ describe('Resources: ', function(){
         }
       })
 
-      it('send an event when a model is removed', function(done){
+      it('sends an event when a model is removed', function(done){
         var config = setup('/sse-remove')
           , clientEvents = config.clientEvents
           , collection = config.collection
@@ -560,12 +562,56 @@ describe('Resources: ', function(){
           expect(e).to.not.exist
         }
       })
-
-      it('only sends permissible models')
-      it('correctly disconnects')
     })
 
+    describe.only('monitoring a single model', function(){
+      it('sends an event when a model is changed', function(done){
+        var config = setup('/sse-model-changes', 1)
+          , clientEvents = config.clientEvents
+          , collection = config.collection
+
+        collection.add({id: 1, value: 'added'})
+
+        clientEvents.addEventListener('change', function(e){
+          expect(JSON.parse(e.data).id).to.equal(1)
+          expect(JSON.parse(e.data).value).to.equal('changed')
+          done()
+        })
+
+        clientEvents.on('open', function(){
+          collection.get(1).save('value', 'changed')
+        })
+
+        clientEvents.onerror = function(e){
+          expect(e).to.not.exist
+        }
+      })
+
+      it('sends an event when a model is removed', function(done){
+        var config = setup('/sse-model-remove', 1)
+          , clientEvents = config.clientEvents
+          , collection = config.collection
+
+        collection.add({id: 1, value: 'added'})
+
+        clientEvents.addEventListener('remove', function(e){
+          expect(JSON.parse(e.data).id).to.equal(1)
+          done()
+        })
+
+        clientEvents.on('open', function(){
+          collection.remove(1)
+        })
+
+        clientEvents.onerror = function(e){
+          expect(e).to.not.exist
+        }
+      })
     })
+
+
+    it('only sends permissible models')
+    it('correctly disconnects')
   })
 
   after(function(done){
