@@ -41,6 +41,7 @@ var flatiron = require('flatiron')
     , pick: function(modelJSON){
       // just like
     }
+    , maxSockets: 1000 // default. Set to a high value so that Server Sent Events can connect to many clients
   })
 
 
@@ -84,6 +85,44 @@ In order to create complex permissions, you can return an object from the permis
 | POST    | /{collection.url}         | create a new model, save to datastore and in memory
 | PUT     | /{collection.url}/*       | update a model
 | DELETE  | /{collection.url}/*       | delete a model
+| GET     | /{collection.url}/subscribe | Server Sent Events for a whole collection |
+| GET     | /{collection.url}/{id}/subscribe | Server Sent Events for a model |
+
+### Server Sent Events
+
+It's possible to subscribe to a collection or model to receive subsequent updates without necessitating long-polling.
+
+These routes are subject to the 'read' permissions.
+
+```js
+// if the server has a resource created for "dogs"
+
+// client-side code
+
+  // listen to a whole collection
+  clientEvents = new EventSource('http://example.com/dogs')
+
+  clientEvents.addEventListener('add', function(e){
+    console.log(JSON.parse(e.data))
+  })
+  clientEvents.addEventListener('change', function(e){
+    console.log(JSON.parse(e.data))
+  })
+  clientEvents.addEventListener('remove', function(e){
+    console.log(JSON.parse(e.data))
+  })
+
+
+  // listen to a single model
+  clientEvents = new EventSource('http://example.com/dogs/1')
+
+  clientEvents.addEventListener('change', function(e){
+    console.log(JSON.parse(e.data))
+  })
+  clientEvents.addEventListener('destroy', function(e){
+    console.log(JSON.parse(e.data))
+  })
+```
 
 ## Tests
 
