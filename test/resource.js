@@ -576,6 +576,27 @@ describe('Resources:', function(){
         }
       })
 
+      it('sends an event when a model is destroyed', function(done){
+        var config = setup('/sse-destroy')
+          , clientEvents = config.clientEvents
+          , collection = config.collection
+
+        clientEvents.addEventListener('remove', function(e){
+          expect(JSON.parse(e.data).id).to.equal(3)
+          clientEvents.close()
+          done()
+        })
+
+        clientEvents.on('open', function(){
+          collection.add({id: 3, value: 'added'})
+          collection.get(3).destroy()
+        })
+
+        clientEvents.onerror = function(e){
+          expect(e).to.not.exist
+        }
+      })
+
       it('handles complex permission filtering', function(done){
         var config = setup('/sse-permissions', null, {
             permissions: {
@@ -589,7 +610,7 @@ describe('Resources:', function(){
           })
           , clientEvents = config.clientEvents
           , collection = config.collection
-          , complete = _.after(2, function(){
+          , complete = _.after(4, function(){
             clientEvents.close()
             done()
           })
@@ -600,16 +621,92 @@ describe('Resources:', function(){
           complete()
         })
 
+        clientEvents.addEventListener('change', function(e){
+          // id should be odd
+          expect(JSON.parse(e.data).id % 2).to.equal(1)
+          expect(JSON.parse(e.data).value).to.equal('changed')
+          complete()
+        })
+
+        clientEvents.addEventListener('remove', function(e){
+          // id should be odd
+          expect(JSON.parse(e.data).id % 2).to.equal(1)
+          complete()
+        })
+
         clientEvents.on('open', function(){
           collection.add({id: 1, value: 'added'})
           collection.add({id: 2, value: 'added'})
           collection.add({id: 3, value: 'added'})
           collection.add({id: 4, value: 'added'})
+          collection.get(3).save({value: 'changed'}, {
+            success: function(){
+              collection.get(3).destroy()
+            }
+          })
         })
 
         clientEvents.onerror = function(e){
           console.log(e)
           expect(e).to.not.exist
+        }
+      })
+
+      it('handles simple whitelist permissions', function(done){
+        var config = setup('/sse-permissions-simple', null, {
+            permissions: ['read']
+          })
+          , clientEvents = config.clientEvents
+          , collection = config.collection
+          , complete = _.after(4, function(){
+            clientEvents.close()
+            done()
+          })
+
+        clientEvents.addEventListener('add', function(e){
+          expect(JSON.parse(e.data).id).to.exist
+          complete()
+        })
+
+        clientEvents.addEventListener('change', function(e){
+          expect(JSON.parse(e.data).value).to.equal('changed')
+          complete()
+        })
+
+        clientEvents.addEventListener('remove', function(e){
+          expect(JSON.parse(e.data).id).to.exist
+          complete()
+        })
+
+        clientEvents.on('open', function(){
+          collection.add({id: 1, value: 'added'})
+          collection.add({id: 2, value: 'added'})
+          collection.add({id: 3, value: 'added'})
+          collection.add({id: 4, value: 'added'})
+          collection.get(3).save({value: 'changed'}, {
+            success: function(){
+              collection.get(3).destroy()
+            }
+          })
+        })
+
+        clientEvents.onerror = function(e){
+          console.log(e)
+          expect(e).to.not.exist
+        }
+      })
+
+      it('handles simple blacklist permissions', function(done){
+        var config = setup('/sse-permissions-simple', null, {
+            // not permitted
+            permissions: []
+          })
+          , clientEvents = config.clientEvents
+
+
+        clientEvents.onerror = function(e){
+          expect(e).to.equal('Access denied')
+          done()
         }
       })
     })
@@ -659,22 +756,124 @@ describe('Resources:', function(){
           expect(e).to.not.exist
         }
       })
-    })
 
-    it('allows many connections', function(done){
-      var connections = []
-        , count = 10
-        , close = _.after(count, function(){
-          connections.forEach(function(conn){
-            conn.close()
+      it('handles complex permission filtering', function(done){
+        var config = setup('/sse-model-permissions', 1, {
+            permissions: {
+              read: function(coll){
+                // let's just pretend only odd numbered models are permissible
+                return _.filter(coll, function(model){
+                  return model.id % 2
+                })
+              }
+            }
           })
-          done()
+          , clientEvents = config.clientEvents
+          , collection = config.collection
+          , complete = _.after(2, function(){
+            clientEvents.close()
+            done()
+          })
+
+        collection.add({id: 1, value: 'added'})
+        collection.add({id: 2, value: 'added'})
+
+        clientEvents.addEventListener('change', function(e){
+          // id should be odd
+          expect(JSON.parse(e.data).id % 2).to.equal(1)
+          expect(JSON.parse(e.data).value).to.equal('changed')
+          complete()
         })
 
-      for (var i = count; i > 0; i--){
-        connections[i] = setup('/connection-test').clientEvents
-        connections[i].on('open', close)
-      }
+        clientEvents.addEventListener('destroy', function(e){
+          // id should be odd
+          expect(JSON.parse(e.data).id % 2).to.equal(1)
+          complete()
+        })
+
+        clientEvents.on('open', function(){
+          collection.get(2).save({value: 'changed'})
+          collection.get(1).save({value: 'changed'}, {
+            success: function(){
+              collection.get(1).destroy()
+            }
+          })
+        })
+
+        clientEvents.onerror = function(e){
+          expect(e).to.not.exist
+        }
+      })
+
+      it('handles simple whitelist permissions', function(done){
+        var config = setup('/sse-model-permissions-simple', 1, {
+            permissions: ['read']
+          })
+          , clientEvents = config.clientEvents
+          , collection = config.collection
+          , callCount = 0
+          , complete = function(){
+            if (callCount !== 2) return
+
+            clientEvents.close()
+            done()
+          }
+
+        collection.add({id: 1, value: 'added'})
+        collection.add({id: 2, value: 'added'})
+
+        clientEvents.addEventListener('change', function(e){
+          var data = JSON.parse(e.data)
+
+          expect(data.id).to.exist
+          expect(data.value).to.equal('changed')
+
+          if (data.id === 1) {
+            callCount++
+            complete()
+          }
+        })
+
+        clientEvents.addEventListener('destroy', function(e){
+          var data = JSON.parse(e.data)
+          expect(data.id).to.exist
+
+          if (data.id === 1) {
+            callCount++
+            complete()
+          }
+        })
+
+        clientEvents.on('open', function(){
+          collection.get(2).save({value: 'changed'})
+          collection.get(1).save({value: 'changed'}, {
+            success: function(){
+              collection.get(1).destroy()
+            }
+          })
+        })
+
+        clientEvents.onerror = function(e){
+          console.error(e)
+          expect(e).to.not.exist
+        }
+      })
+
+      it('handles simple blacklist permissions', function(done){
+        var config = setup('/sse-model-permissions-simple', 1, {
+            // not permitted
+            permissions: []
+          })
+          , clientEvents = config.clientEvents
+          , collection = config.collection
+
+        collection.add({id: 1})
+
+        clientEvents.onerror = function(e){
+          expect(e).to.equal('Access denied')
+          done()
+        }
+      })
     })
   })
 
