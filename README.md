@@ -100,7 +100,7 @@ These routes are subject to the 'read' permissions.
 // client-side code
 
   // listen to a whole collection
-  clientEvents = new EventSource('http://example.com/dogs')
+  clientEvents = new EventSource('http://example.com/dogs/subscribe')
 
   clientEvents.addEventListener('add', function(e){
     console.log(JSON.parse(e.data))
@@ -114,7 +114,7 @@ These routes are subject to the 'read' permissions.
 
 
   // listen to a single model
-  clientEvents = new EventSource('http://example.com/dogs/1')
+  clientEvents = new EventSource('http://example.com/dogs/1/subscribe')
 
   clientEvents.addEventListener('change', function(e){
     console.log(JSON.parse(e.data))
@@ -131,3 +131,13 @@ Mocha tests.
 ```shell
 npm test
 ```
+
+## Changelog
+
+### 0.2 SSE
+* adds Server Sent Events for models and collections
+* SSE is permissions aware (based on `read` permissions)
+
+### 0.1 Inital
+* creates CRUD routes for a given collection
+* has simple and complex permissions
