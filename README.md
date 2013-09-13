@@ -3,13 +3,12 @@ Wheelhouse Resource
 
 [![NPM](https://nodei.co/npm/wheelhouse-resource.png)](https://nodei.co/npm/wheelhouse-resource/)
 
-Like [flatiron/restful](https://github.com/flatiron/restful), but swaps the dependency on [flatiron/resourceful](https://github.com/flatiron/resourceful) for server-side [Backbone](https://github.com/jashkenas/backbone) that is the standard with Wheelhouse. Also provides access permissions and output filtering.
+Like [flatiron/restful](https://github.com/flatiron/restful), but swaps the dependency on [flatiron/resourceful](https://github.com/flatiron/resourceful) for server-side [Backbone](https://github.com/jashkenas/backbone) that is the standard with Wheelhouse. Also provides access permissions, output filtering, and Server Sent Events.
 
 ## Things to note
-* This is alpha.
-* Dependency on backbone the server-side being overwritten to allow syncing to a data store. This Backbone should live at `app.Backbone`. e.g. [joeybaker/wheelhouse-couch](https://github.com/joeybaker/wheelhouse-couch)
-* Backbone data is pulled from the datastore on resource creation and stored in memory. This has the potential to cause your process to run out of RAM on a large amount of data.
-* Unless a new resource finds models in the collection in memory, it will attempt to fetch its data from the datastore on initialization.
+* This is intended work with server-side Backbone.js. You'll need to overwrite `Backbone.sync` to it to communicate with a data store. This Backbone should live at `app.Backbone`. e.g. [joeybaker/wheelhouse-couch](https://github.com/joeybaker/wheelhouse-couch)
+* Backbone data is pulled from the datastore (unless there are already models in the collection) on resource creation and stored in memory. This has the potential to cause your process to run out of RAM on a large amount of data.
+* By default, Node has a very small number of max connections (5), this overwrites that with a configurable number (1000 by default) so that many clients can stay connected to a SSE stream. Though this means many sockets are open, the actual traffic the app sees is signficantly less then using long-polling.
 
 ## Usage
 
@@ -90,11 +89,11 @@ In order to create complex permissions, you can return an object from the permis
 | GET     | /{collection.url}/subscribe | Server Sent Events for a whole collection |
 | GET     | /{collection.url}/{id}/subscribe | Server Sent Events for a model |
 
-### Server Sent Events
+## Server Sent Events
 
-It's possible to subscribe to a collection or model to receive subsequent updates without necessitating long-polling.
+Subscribe to a collection or model to receive subsequent updates without necessitating long-polling.
 
-These routes are subject to the 'read' permissions.
+These routes are subject to the 'read' permissions. If the client wouldn't be able to access the route via a `GET` request, they won't be able to access the SSE stream.
 
 ```js
 // if the server has a resource created for "dogs"
@@ -126,6 +125,12 @@ These routes are subject to the 'read' permissions.
   })
 ```
 
+### Why not websockets?
+Websockets are good, but answer different problems.
+
+* Websockets are an alternative to HTTP REST. Both solutions offer two-way client-server communications. The point of this module is to provide HTTP REST. So… yea.
+* SSE is significantly lighter-weight and more reliable than websockets.
+
 ## Tests
 
 Mocha tests.
@@ -135,6 +140,9 @@ npm test
 ```
 
 ## Changelog
+
+### 0.2.1 SSE keepAlive
+SSE now sends keepalive events to prevent the client from timing out.
 
 ### 0.2 SSE
 * adds Server Sent Events for models and collections
