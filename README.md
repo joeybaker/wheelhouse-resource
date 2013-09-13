@@ -1,6 +1,8 @@
 Wheelhouse Resource
 ===================
 
+[![NPM](https://nodei.co/npm/wheelhouse-resource.png)](https://nodei.co/npm/wheelhouse-resource/)
+
 Like [flatiron/restful](https://github.com/flatiron/restful), but swaps the dependency on [flatiron/resourceful](https://github.com/flatiron/resourceful) for server-side [Backbone](https://github.com/jashkenas/backbone) that is the standard with Wheelhouse. Also provides access permissions and output filtering.
 
 ## Things to note
