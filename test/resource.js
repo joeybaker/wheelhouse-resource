@@ -697,7 +697,7 @@ describe('Resources:', function(){
       })
 
       it('handles simple blacklist permissions', function(done){
-        var config = setup('/sse-permissions-simple', null, {
+        var config = setup('/sse-permissions-simple-blacklist', null, {
             // not permitted
             permissions: []
           })
@@ -860,7 +860,7 @@ describe('Resources:', function(){
       })
 
       it('handles simple blacklist permissions', function(done){
-        var config = setup('/sse-model-permissions-simple', 1, {
+        var config = setup('/sse-model-permissions-simple-blacklist', 1, {
             // not permitted
             permissions: []
           })
@@ -869,8 +869,9 @@ describe('Resources:', function(){
 
         collection.add({id: 1})
 
+        // note: for single models, we return undefined instead of an error statement
         clientEvents.onerror = function(e){
-          expect(e).to.equal('Access denied')
+          expect(e).to.be.undefined
           done()
         }
       })
