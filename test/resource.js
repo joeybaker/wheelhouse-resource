@@ -576,31 +576,39 @@ describe('Resources:', function(){
         }
       })
 
-      // TODO
-      it.only('only sends permissible models', function(done){
+      it('handles complex permission filtering', function(done){
         var config = setup('/sse-permissions', null, {
-            read: function(coll){
-              // let's just pretend only odd numbered models are permissible
-              return _.filter(coll, function(model){
-                return model.id % 2
-              })
+            permissions: {
+              read: function(coll){
+                // let's just pretend only odd numbered models are permissible
+                return _.filter(coll, function(model){
+                  return model.id % 2
+                })
+              }
             }
           })
           , clientEvents = config.clientEvents
           , collection = config.collection
+          , complete = _.after(2, function(){
+            clientEvents.close()
+            done()
+          })
 
-        clientEvents.addEventListener('remove', function(e){
-          expect(JSON.parse(e.data).id).to.equal(3)
-          clientEvents.close()
-          done()
+        clientEvents.addEventListener('add', function(e){
+          // id should be odd
+          expect(JSON.parse(e.data).id % 2).to.equal(1)
+          complete()
         })
 
         clientEvents.on('open', function(){
+          collection.add({id: 1, value: 'added'})
+          collection.add({id: 2, value: 'added'})
           collection.add({id: 3, value: 'added'})
-          collection.remove(3)
+          collection.add({id: 4, value: 'added'})
         })
 
         clientEvents.onerror = function(e){
+          console.log(e)
           expect(e).to.not.exist
         }
       })
