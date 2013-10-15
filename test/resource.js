@@ -16,6 +16,24 @@ var chai = require('chai')
   , port = 9070
 
 describe('Resources:', function(){
+  function setup(name, cb){
+    var Collection = Backbone.Collection.extend({
+        url: '/' + (name || 'collection')
+        , model: Backbone.Model.extend({})
+      })
+      , collection = new Collection()
+      , complete = _.after(2, cb)
+
+    collection.reset()
+    cache = {}
+
+    collection.create({key: 'value1', id: _.uniqueId()}, {wait: true, success: complete})
+    collection.create({key: 'value2', id: _.uniqueId()}, {wait: true, success: complete})
+
+    ;new Resource(collection, {app: app})
+    return collection
+  }
+
   before(function(done){
     app.use(flatiron.plugins.http)
     app.use(flatiron.plugins.log)
@@ -39,7 +57,7 @@ describe('Resources:', function(){
           }
           break
         case 'create':
-          model.set({id: _.uniqueId()})
+          model.attributes.id = model.id = _.uniqueId()
           cache[_.result(model, 'url')] = model.toJSON()
           success(model.id)
           break
@@ -75,16 +93,20 @@ describe('Resources:', function(){
           cache[_.result(model, 'url')].key.should.equal('value')
           done()
         }
+        , wait: true
       })
     })
 
     it('returns JSON on fetch', function(done){
       collection.reset()
       collection.length.should.equal(0)
-      collection.fetch({success: function(coll){
-        coll.first().get('key').should.equal('value')
-        done()
-      }})
+      collection.fetch({
+        success: function(coll){
+          coll.first().get('key').should.equal('value')
+          done()
+        }
+        , wait: true
+      })
     })
 
     after(function(){
@@ -93,30 +115,18 @@ describe('Resources:', function(){
   })
 
   describe('a new resource', function(){
-    function setup(){
-      var Collection = Backbone.Collection.extend({
-          url: '/collection'
-          , model: Backbone.Model.extend({})
+    it('adds routes to the router', function(done){
+      var collName = 'addsRoutes'
+        , collection = setup(collName, function(){
+          process.nextTick(function(){
+            app.router.routes[collName].get.should.exist
+            app.router.routes[collName][collection.first().id].get.should.exist
+            app.router.routes[collName].post.should.exist
+            app.router.routes[collName][collection.first().id].put.should.exist
+            app.router.routes[collName][collection.first().id]['delete'].should.exist
+            done()
+          })
         })
-        , collection = new Collection()
-
-      collection.reset()
-      cache = {}
-
-      collection.create({key: 'value1'})
-      collection.create({key: 'value2'})
-
-      ;new Resource(collection, {app: app})
-      return collection
-    }
-
-    it('adds routes to the router', function(){
-      setup()
-      app.router.routes.collection.get.should.exist
-      app.router.routes.collection['([_.()!\\ %@&a-zA-Z0-9-]+)'].get.should.exist
-      app.router.routes.collection.post.should.exist
-      app.router.routes.collection['([_.()!\\ %@&a-zA-Z0-9-]+)'].put.should.exist
-      app.router.routes.collection['([_.()!\\ %@&a-zA-Z0-9-]+)']['delete'].should.exist
     })
 
     it('populates the collection on creation', function(){
@@ -137,46 +147,56 @@ describe('Resources:', function(){
     })
 
     it('creates', function(done){
-      var collection = setup()
-      request.post({
-        url: 'http://localhost:' + port + '/collection'
-        , json: {key: 'created!'}
-      }, function(err, res, body){
-        should.not.exist(err)
-        should.exist(body.id)
-        collection.get(body.id).get('key').should.equal('created!')
-        done()
+      var name = 'newResCreates'
+        , collection = setup(name, function(){
+        process.nextTick(function(){
+          request.post({
+            url: 'http://localhost:' + port + '/' + name
+            , json: {key: 'created!'}
+          }, function(err, res, body){
+            should.not.exist(err)
+            should.exist(body.id)
+            collection.get(body.id).get('key').should.equal('created!')
+            done()
+          })
+        })
       })
     })
 
     it('reads a collection', function(done){
-      setup()
-      request.get({
-        url: 'http://localhost:' + port + '/collection'
-        , json: true
-      }, function(err, res, body){
-        should.not.exist(err)
-        body.length.should.be.above(0)
-        _.last(body).key.should.equal('value2')
-        done()
+      var name = 'newResRead'
+      setup(name, function(){
+        request.get({
+          url: 'http://localhost:' + port + '/' + name
+          , json: true
+        }, function(err, res, body){
+          should.not.exist(err)
+          body.length.should.be.above(0)
+          _.last(body).key.should.equal('value2')
+          done()
+        })
       })
     })
 
-    it('reads a model', function(done){
-      var collection = setup()
-        , id = collection.last().id
+    it.only('reads a model', function(done){
+      var name = 'newResReadModel'
+        , collection = setup(name, function(){
+          process.nextTick(function(){
+            var id = collection.last().id
 
-      expect(collection).to.exist
-      expect(id).to.exist
+            expect(collection).to.exist
+            expect(id).to.exist
 
-      request.get({
-        url: 'http://localhost:' + port + '/collection/' + id
-        , json: true
-      }, function(err, res, body){
-        should.not.exist(err)
-        body.id.should.equal(id)
-        done()
-      })
+            request.get({
+              url: 'http://localhost:' + port + '/' + name + '/' + id
+              , json: true
+            }, function(err, res, body){
+              should.not.exist(err)
+              body.id.should.equal(id)
+              done()
+            })
+          })
+        })
     })
 
     it('updates', function(done){
@@ -874,6 +894,40 @@ describe('Resources:', function(){
           expect(e).to.be.undefined
           done()
         }
+      })
+    })
+  })
+
+
+  describe('manipulating the collection', function(){
+    it('adds new routes when a model is added to the collection', function(done){
+      var collName = 'new-routes'
+        , collection = setup(collName)
+
+      collection.create({key: 'added!'}, {
+        success: function(model){
+          var routes = app.router.routes[collName]
+          expect(routes).to.have.property(model.id)
+          expect(routes[model.id]).to.have.property('get')
+          expect(routes[model.id]).to.have.property('put')
+          expect(routes[model.id]).to.have.property('delete')
+          done()
+        }
+        , wait: true
+      })
+    })
+
+    it('removes routes when a model is removed from the collection', function(done){
+      var collName = 'rm-routes'
+        , collection = setup(collName)
+
+      collection.last().destroy({
+        success: function(model){
+          var routes = app.router.routes[collName]
+          expect(routes).to.not.have.property(model.id)
+          done()
+        }
+        , wait: true
       })
     })
   })
