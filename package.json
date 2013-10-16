@@ -1,13 +1,13 @@
 {
   "name": "wheelhouse-resource",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "RESTful routes for wheelhouse with permissions and filtering.",
   "main": "index.js",
   "directories": {
     "test": "test"
   },
   "dependencies": {
-    "lodash": "~1.3",
+    "lodash": "~2.2.1",
     "sse": "0.0.5"
   },
   "peerDependancies": {
