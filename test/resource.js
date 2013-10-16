@@ -93,9 +93,9 @@ describe('Resources:', function(){
   })
 
   describe('a new resource', function(){
-    function setup(){
+    function setup(name){
       var Collection = Backbone.Collection.extend({
-          url: '/collection'
+          url: '/api/' + (name || 'collection')
           , model: Backbone.Model.extend({})
         })
         , collection = new Collection()
@@ -106,17 +106,18 @@ describe('Resources:', function(){
       collection.create({key: 'value1'})
       collection.create({key: 'value2'})
 
-      ;new Resource(collection, {app: app})
+      ;new Resource(collection, {app: app, nameRegEx: /\/api\/(.*)\/?/})
       return collection
     }
 
     it('adds routes to the router', function(){
-      setup()
-      app.router.routes.collection.get.should.exist
-      app.router.routes.collection['([_.()!\\ %@&a-zA-Z0-9-]+)'].get.should.exist
-      app.router.routes.collection.post.should.exist
-      app.router.routes.collection['([_.()!\\ %@&a-zA-Z0-9-]+)'].put.should.exist
-      app.router.routes.collection['([_.()!\\ %@&a-zA-Z0-9-]+)']['delete'].should.exist
+      var name = 'addingRoutes'
+      setup(name)
+      app.router.routes.api[name].get.should.exist
+      app.router.routes.api[name]['([_.()!\\ %@&a-zA-Z0-9-]+)'].get.should.exist
+      app.router.routes.api[name].post.should.exist
+      app.router.routes.api[name]['([_.()!\\ %@&a-zA-Z0-9-]+)'].put.should.exist
+      app.router.routes.api[name]['([_.()!\\ %@&a-zA-Z0-9-]+)']['delete'].should.exist
     })
 
     it('populates the collection on creation', function(){
@@ -137,22 +138,38 @@ describe('Resources:', function(){
     })
 
     it('creates', function(done){
-      var collection = setup()
+      var name = 'creates/again'
+        , collection = setup(name)
+        , complete = _.after(2, done)
+
+      // with out a trailing slash
       request.post({
-        url: 'http://localhost:' + port + '/collection'
+        url: 'http://localhost:' + port + '/api/' + name
         , json: {key: 'created!'}
       }, function(err, res, body){
         should.not.exist(err)
         should.exist(body.id)
         collection.get(body.id).get('key').should.equal('created!')
-        done()
+        complete()
+      })
+
+      // with a trailing slash
+      request.post({
+        url: 'http://localhost:' + port + '/api/' + name + '/'
+        , json: {key: 'created!'}
+      }, function(err, res, body){
+        should.not.exist(err)
+        should.exist(body.id)
+        collection.get(body.id).get('key').should.equal('created!')
+        complete()
       })
     })
 
     it('reads a collection', function(done){
-      setup()
+      var name = 'readsAColleciton'
+      setup(name)
       request.get({
-        url: 'http://localhost:' + port + '/collection'
+        url: 'http://localhost:' + port + '/api/' + name
         , json: true
       }, function(err, res, body){
         should.not.exist(err)
@@ -163,14 +180,15 @@ describe('Resources:', function(){
     })
 
     it('reads a model', function(done){
-      var collection = setup()
+      var name = 'readsAModel'
+        , collection = setup(name)
         , id = collection.last().id
 
       expect(collection).to.exist
       expect(id).to.exist
 
       request.get({
-        url: 'http://localhost:' + port + '/collection/' + id
+        url: 'http://localhost:' + port + '/api/' + name + '/' + id
         , json: true
       }, function(err, res, body){
         should.not.exist(err)
@@ -180,32 +198,34 @@ describe('Resources:', function(){
     })
 
     it('updates', function(done){
-      var collection = setup()
+      var name = 'updating'
+        , collection = setup(name)
 
       collection.add({id: 1, key: 'not updated'})
       request.put({
-        url: 'http://localhost:' + port + '/collection/1'
+        url: 'http://localhost:' + port + '/api/' + name + '/1'
         , json: {id: 1, key: 'updated!'}
       }, function(err, res, body){
         should.not.exist(err)
         body.id.should.equal(1)
-        cache['/collection/1'].key.should.equal('updated!')
+        cache['/api/' + name + '/1'].key.should.equal('updated!')
         collection.get(1).get('key').should.equal('updated!')
         done()
       })
     })
 
     it('deletes', function(done){
-      var collection = setup()
+      var name = 'deletes'
+        , collection = setup(name)
         , id = collection.last().id
 
       request.del({
-        url: 'http://localhost:' + port + '/collection/' + id
+        url: 'http://localhost:' + port + '/api/' + name + '/' + id
         , json: true
       }, function(err, res, body){
         should.not.exist(err)
         should.not.exist(body)
-        should.not.exist(cache['/collection/' + id])
+        should.not.exist(cache['/api/' + name + '/' + id])
         should.not.exist(collection.get(id))
         done()
       })
