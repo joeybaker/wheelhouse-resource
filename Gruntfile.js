@@ -55,7 +55,7 @@ module.exports = function(grunt){
     }
     , shell: {
       gitTag: {
-        command: 'git tag v<%= grunt.file.readJSON("package.json").version %>'
+        command: 'git tag -a v<%= grunt.file.readJSON("package.json").version %> -m "`git log --pretty=format:"* %s" <%= pkg.version %>...`"'
         , options: {
           stdout: true
           , failOnError: true
@@ -140,6 +140,7 @@ module.exports = function(grunt){
   grunt.registerTask('test', ['simplemocha'])
   grunt.registerTask('publish', [
     'shell:gitRequireCleanTree'
+    , 'shell:gitPullRebase'
     , 'jshint'
     , 'shell:npmTest'
     , 'bump:' + (grunt.option('bump') || 'patch')
