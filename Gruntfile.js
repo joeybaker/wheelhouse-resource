@@ -100,6 +100,13 @@ module.exports = function(grunt){
           , failOnError: true
         }
       }
+      , gitPullRebase: {
+        command: 'git pull --rebase origin master'
+        , options: {
+          stdout: true
+          , failOnError: true
+        }
+      }
       , gitPush: {
         command: 'git push origin master --tags'
         , options: {
