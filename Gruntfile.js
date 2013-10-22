@@ -55,7 +55,7 @@ module.exports = function(grunt){
     }
     , shell: {
       gitTag: {
-        command: 'git tag -a v<%= grunt.file.readJSON("package.json").version %> -m "`git log --pretty=format:"* %s" <%= pkg.version %>...`"'
+        command: 'git tag -a v<%= grunt.file.readJSON("package.json").version %> -m "`git log --pretty=format:"* %s" v<%= pkg.version %>...`"'
         , options: {
           stdout: true
           , failOnError: true
