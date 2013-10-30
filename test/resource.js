@@ -18,10 +18,11 @@ var chai = require('chai')
 describe('Resources:', function(){
   before(function(done){
     app.use(flatiron.plugins.http)
-    app.use(flatiron.plugins.log)
     app.router.configure({
       strict: false
     })
+    // shut the damn logs up
+    app.options.log = {console: {silent: true}}
 
     // testing only implementation of Backbone.Sync. Really, wheelhouse should have done this for us with something like wheelhouse-couch
     Backbone.sync = function(method, model, options){
