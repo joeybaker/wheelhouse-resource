@@ -115,10 +115,10 @@ describe('Resources:', function(){
       var name = 'addingRoutes'
       setup(name)
       app.router.routes.api[name].get.should.exist
-      app.router.routes.api[name]['([_.()!\\ %@&a-zA-Z0-9-]+)'].get.should.exist
+      app.router.routes.api[name]['([._a-zA-Z0-9-]+)'].get.should.exist
       app.router.routes.api[name].post.should.exist
-      app.router.routes.api[name]['([_.()!\\ %@&a-zA-Z0-9-]+)'].put.should.exist
-      app.router.routes.api[name]['([_.()!\\ %@&a-zA-Z0-9-]+)']['delete'].should.exist
+      app.router.routes.api[name]['([._a-zA-Z0-9-]+)'].put.should.exist
+      app.router.routes.api[name]['([._a-zA-Z0-9-]+)']['delete'].should.exist
     })
 
     it('populates the collection on creation', function(){
