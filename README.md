@@ -25,7 +25,7 @@ var flatiron = require('flatiron')
     app: app // required
     // optional
     , nameRegEx: /\/api\/(.*)/ // the default is to assume that the collection's url is used to name collection, if your collection's name doesn't match the url, the first match of this regex will be used to pull the name from the url
-    , permissions: function(){
+    , permissions: function(collection){
       // return an array with 'create', 'read', 'update', and/or 'del'
       // the context is a flatiron-style request
       if (this.req.user) return ['create', 'read', 'update', 'del']
