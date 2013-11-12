@@ -890,9 +890,8 @@ describe('Resources:', function(){
 
         collection.add({id: 1})
 
-        // note: for single models, we return undefined instead of an error statement
         clientEvents.onerror = function(e){
-          expect(e).to.be.undefined
+          expect(e).to.equal('Access denied')
           done()
         }
       })
