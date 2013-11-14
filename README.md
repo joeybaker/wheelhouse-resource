@@ -61,13 +61,13 @@ In order to create complex permissions, you can return an object from the permis
     })
   }
   // data is the incoming data from the POST request
-  , create: function(collectionJSON, data){
+  , create: function(collectionJSON){
     // return a boolean
-    if (data.value === 'yup') return true
+    if (this.req.payload.value === 'yup') return true
   }
-  , update: function(modelJSON, data){
+  , update: function(modelJSON){
     // return a boolean
-    if (data.value === 'yup') return true
+    if (this.req.payload.value === 'yup') return true
   }
   , del: function(modelJSON){
     // return a boolean
