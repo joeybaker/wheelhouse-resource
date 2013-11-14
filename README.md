@@ -141,6 +141,9 @@ npm test
 
 ## Changelog
 
+### 0.2.14 Cleaner SSE implementation
+Uses the SSE client directly so that we can go through `app.router`. This fixes all kinds of things …like permissions. Thanks @kkesha!
+
 ### 0.2.1 SSE keepAlive
 SSE now sends keepalive events to prevent the client from timing out.
 
