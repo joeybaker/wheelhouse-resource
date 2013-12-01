@@ -77,6 +77,15 @@ In order to create complex permissions, you can return an object from the permis
 …
 ```
 
+## Modifying the returned data
+Passing a `omit` or `pick` query to the url with a comma separated list of values will limit the data returned.
+
+e.g. `curl http://localhost:8000/collection/url?pick=id,car` will return just the `id` and `car` values of the models in the collection
+
+`omit` is the inverse of `pick`, it will return the whole model with the exception of the values passed.
+
+Putting the same value in both `pick` and `omit` will cause the value to be ommitted. Put another way: `omit` overrides `pick`.
+
 ## REST routes created
 
 | Method  | Route                     | Response
@@ -140,6 +149,10 @@ npm test
 ```
 
 ## Changelog
+
+### 0.2.16
+* querystring are no longer considered to be a valid part of the collection's name. This means that if your collection urls were depending on query strings, they'll break.
+* it's now possible to pass `omit` and `pick` params in the url to respectively limit the returned data.
 
 ### 0.2.14 Cleaner SSE implementation
 Uses the SSE client directly so that we can go through `app.router`. This fixes all kinds of things …like permissions. Thanks @kkesha!

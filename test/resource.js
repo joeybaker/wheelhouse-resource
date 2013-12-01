@@ -898,7 +898,14 @@ describe('Resources:', function(){
     })
   })
 
-  describe.only('url params', function(){
+  describe('url params', function(){
+    var config
+      , url = '/params'
+      , data = [
+        {id: 1, value1: 'id1: 1', value2: 'id1: 2'}
+        , {id: 2, value1: 'id2: 1', value2: 'id2: 2'}
+      ]
+
     function setup(url, data, options){
       var Collection = Backbone.Collection.extend({
           url: url
@@ -910,28 +917,73 @@ describe('Resources:', function(){
       return {collection: collection, resource: resource}
     }
 
-    it('`?pick` filters attributes', function(done){
-      var url = '/params-pick'
-        , data = [
-          {id: 1, value1: 'id1: 1', value2: 'id1: 2'}
-          , {id: 2, value1: 'id2: 1', value2: 'id2: 2'}
-        ]
+    before(function(){
+      config = setup(url, data)
+    })
 
-      setup(url, data)
-
+    it('filters attributes for a model GET on `?pick`', function(done){
       request({
-        url: 'http://' + path.join('localhost:9070', url)
+        url: 'http://' + path.join('localhost:' + port, url, '/1')
         , json: true
         , qs: {
           pick: 'value1'
         }
       }, function(err, res, body){
         expect(err).to.not.exist
-        expect(body).to.deep.equal(_.map(data, function(model){ return {value1: model.value1}}))
+        // expect(body).to.deep.equal(_.map(data, function(model){ return {value1: model.value1}}))
+        expect(body).to.deep.equal(_.pick(data[0], 'value1'))
         done()
       })
     })
 
+    it('filters attributes for a model GET on `?omit`', function(done){
+      request({
+        url: 'http://' + path.join('localhost:' + port, url, '/1')
+        , json: true
+        , qs: {
+          omit: 'value1'
+        }
+      }, function(err, res, body){
+        expect(err).to.not.exist
+        // expect(body).to.deep.equal(_.map(data, function(model){ return {value1: model.value1}}))
+        expect(body).to.deep.equal(_.omit(data[0], 'value1'))
+        done()
+      })
+    })
+
+    it('filters attributes for a collection GET on `?pick`', function(done){
+      request({
+        url: 'http://' + path.join('localhost:' + port, url)
+        , json: true
+        , qs: {
+          pick: 'value1'
+        }
+      }, function(err, res, body){
+        expect(err).to.not.exist
+        // expect(body).to.deep.equal(_.map(data, function(model){ return {value1: model.value1}}))
+        expect(body).to.deep.equal(data.map(function(model){
+          return _.pick(model, 'value1')
+        }))
+        done()
+      })
+    })
+
+    it('filters attributes for a collection GET on `?omit`', function(done){
+      request({
+        url: 'http://' + path.join('localhost:' + port, url)
+        , json: true
+        , qs: {
+          omit: 'value1'
+        }
+      }, function(err, res, body){
+        expect(err).to.not.exist
+        // expect(body).to.deep.equal(_.map(data, function(model){ return {value1: model.value1}}))
+        expect(body).to.deep.equal(data.map(function(model){
+          return _.omit(model, 'value1')
+        }))
+        done()
+      })
+    })
   })
 
   after(function(done){
