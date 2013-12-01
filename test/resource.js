@@ -898,6 +898,42 @@ describe('Resources:', function(){
     })
   })
 
+  describe.only('url params', function(){
+    function setup(url, data, options){
+      var Collection = Backbone.Collection.extend({
+          url: url
+          , model: Backbone.Model.extend({})
+        })
+        , collection = new Collection(data)
+        , resource = new Resource(collection, _.extend({app: app}, options || {}))
+
+      return {collection: collection, resource: resource}
+    }
+
+    it('`?pick` filters attributes', function(done){
+      var url = '/params-pick'
+        , data = [
+          {id: 1, value1: 'id1: 1', value2: 'id1: 2'}
+          , {id: 2, value1: 'id2: 1', value2: 'id2: 2'}
+        ]
+
+      setup(url, data)
+
+      request({
+        url: 'http://' + path.join('localhost:9070', url)
+        , json: true
+        , qs: {
+          pick: 'value1'
+        }
+      }, function(err, res, body){
+        expect(err).to.not.exist
+        expect(body).to.deep.equal(_.map(data, function(model){ return {value1: model.value1}}))
+        done()
+      })
+    })
+
+  })
+
   after(function(done){
     cache = {}
     app.server.close()
