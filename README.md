@@ -150,6 +150,9 @@ npm test
 
 ## Changelog
 
+### 0.2.17
+Our hack for backbone-associations was `set`ing silently. This meant that change events and `previousAttributes()` would fail to work. This no longer sets silently. Apparently, to no ill effect.
+
 ### 0.2.16
 * querystring are no longer considered to be a valid part of the collection's name. This means that if your collection urls were depending on query strings, they'll break.
 * it's now possible to pass `omit` and `pick` params in the url to respectively limit the returned data.
