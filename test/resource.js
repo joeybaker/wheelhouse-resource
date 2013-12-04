@@ -730,6 +730,8 @@ describe('Resources:', function(){
           done()
         }
       })
+
+      it('closes the SSE connection on browser disconnect')
     })
 
     describe('monitoring a single model', function(){
