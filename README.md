@@ -150,6 +150,12 @@ npm test
 
 ## Changelog
 
+### 0.2.19
+Minor cleanup. Now throwing errors if Resouce isn't passed necessary config options.
+
+### 0.2.18
+Fix flatiron silliness. SSE connections now close
+
 ### 0.2.17
 Our hack for backbone-associations was `set`ing silently. This meant that change events and `previousAttributes()` would fail to work. This no longer sets silently. Apparently, to no ill effect.
 
