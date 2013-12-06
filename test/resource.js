@@ -30,13 +30,13 @@ describe('Resources:', function(){
 
       switch (method){
         case 'read':
-          if (model.id) success(cache[_.result(model, 'url')])
+          if (model.id)
+            success(cache[_.result(model, 'url')])
           else {
-            var out = []
-            _.each(cache, function(m, id){
+            success(_.reduce(cache, function(out, m, id){
               if (id.indexOf(_.result(model, 'url')) > -1) out.push(m)
-            })
-            success(out)
+              return out
+            }, []))
           }
           break
         case 'create':
