@@ -150,6 +150,9 @@ npm test
 
 ## Changelog
 
+### 0.2.20
+* Rather than passing the raw `res.response` object to SSEClient, patch flatiron's lack of `'close'` event. This allows us to use the flatiron `this.res` object which might have handy methods.
+
 ### 0.2.19
 Minor cleanup. Now throwing errors if Resouce isn't passed necessary config options.
 
