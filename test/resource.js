@@ -521,7 +521,7 @@ describe('Resources:', function(){
     function setup(url, id, options){
       var SSECollection = Backbone.Collection.extend({
           url: url
-          , model: Backbone.Model.extend({})
+          , model: Backbone.Model.extend(options && options.model ? options.model : {})
         })
         , sseCollection = new SSECollection()
         , clientEvents
@@ -897,6 +897,28 @@ describe('Resources:', function(){
           done()
         }
       })
+    })
+
+    it('handles permisssions without a standard id attribute', function(done){
+      var config = setup('/sse-idAttribute', null, {model: {idAttribute: '_id'}})
+        , clientEvents = config.clientEvents
+        , collection = config.collection
+
+      clientEvents.addEventListener('change', function(e){
+        expect(JSON.parse(e.data)._id).to.equal(2)
+        expect(JSON.parse(e.data).value).to.equal('changed')
+        clientEvents.close()
+        done()
+      })
+
+      clientEvents.on('open', function(){
+        collection.add({_id: 2, value: 'added'})
+        collection.get(2).save('value', 'changed')
+      })
+
+      clientEvents.onerror = function(e){
+        expect(e).to.not.exist
+      }
     })
   })
 
