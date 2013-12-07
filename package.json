@@ -1,6 +1,6 @@
 {
   "name": "wheelhouse-resource",
-  "version": "0.2.19",
+  "version": "0.2.20",
   "description": "RESTful routes for wheelhouse with permissions and filtering.",
   "main": "index.js",
   "directories": {
@@ -25,7 +25,8 @@
     "grunt-shell": "~0.3.1",
     "grunt-notify": "~0.2.4",
     "grunt-contrib-jshint": "~0.7.0",
-    "eventsource": "0.0.7"
+    "eventsource": "0.0.7",
+    "sinon": "~1.7.3"
   },
   "scripts": {
     "test": "mocha"

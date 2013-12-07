@@ -11,6 +11,7 @@ var chai = require('chai')
   , path = require('path')
   , should = chai.should()
   , expect = chai.expect
+  , sinon = require('sinon')
   , app = flatiron.app
   , cache = {}
   , port = 9070
@@ -730,8 +731,6 @@ describe('Resources:', function(){
           done()
         }
       })
-
-      it('closes the SSE connection on browser disconnect')
     })
 
     describe('monitoring a single model', function(){
@@ -897,6 +896,29 @@ describe('Resources:', function(){
           done()
         }
       })
+    })
+
+    it('closes the SSE connection on browser disconnect', function(done){
+      var config = setup('/sse-disconnect')
+        , clientEvents = config.clientEvents
+        // , collection = config.collection
+
+      sinon.spy(app.log, 'debug')
+
+      clientEvents.on('open', function(){
+        clientEvents.close()
+        // delay long enough for the server to react to the close
+        setTimeout(function(){
+          expect(app.log.debug.secondCall.args[0]).to.equal('resource: sse: client disconnect:')
+          app.log.debug.restore()
+          done()
+        }, 5)
+      })
+
+      clientEvents.onerror = function(e){
+        expect(e).to.not.exist
+      }
+
     })
 
     it('handles permisssions without a standard id attribute', function(done){
