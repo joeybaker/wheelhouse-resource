@@ -43,8 +43,8 @@ var flatiron = require('flatiron')
       // just like
     }
     , maxSockets: 1000 // default. Set to a high value so that Server Sent Events can connect to many clients
+    , assignRoutes: true // default. Set to false to manually assign routes.
   })
-
 
 ```
 
@@ -75,6 +75,24 @@ In order to create complex permissions, you can return an object from the permis
   }
 }
 …
+```
+
+### `assignRoutes()`
+Allows you to delay the loading of the routes so that you can have a chance to modify the route's behavior. This might be useful if you'd like to perform an action before any model of a collection is updated.
+
+```js
+var Resource = require('wheelhouse-resource')
+  , resource = new Resource(collection, {app: app, assignRoutes: false})
+
+// by way of example: override the update method to lower case all names
+resource.update = function(){
+  this.req.data.name = this.req.data.name.toLowerCase()
+  // You'll almost certianlly want to call the protoype method after you're done to take advantage of permissions, error handling, etc…
+  Resource.prototype.update.call(this)
+}
+
+// after you've overwritten your methods, assign the routes.
+resource.assignRoutes()
 ```
 
 ## Modifying the returned data
@@ -149,6 +167,10 @@ npm test
 ```
 
 ## Changelog
+
+### 0.2.21
+* **new** allow routes to not be assigned automatically on resource init by passing the `assignRoutes: false` in the options. You can then assign them with `resource.assignRoutes()`. This is handy if you want to override the CRUD methods.
+* only listen to the SSE connection `once` for a close event.
 
 ### 0.2.20
 * Rather than passing the raw `res.response` object to SSEClient, patch flatiron's lack of `'close'` event. This allows us to use the flatiron `this.res` object which might have handy methods.
