@@ -96,13 +96,22 @@ resource.assignRoutes()
 ```
 
 ## Modifying the returned data
+
+### `?omit` and `?pick`
 Passing a `omit` or `pick` query to the url with a comma separated list of values will limit the data returned.
 
 e.g. `curl http://localhost:8000/collection/url?pick=id,car` will return just the `id` and `car` values of the models in the collection
 
-`omit` is the inverse of `pick`, it will return the whole model with the exception of the values passed.
+[`omit`](http://lodash.com/docs#omit) is the inverse of [`pick`](http://lodash.com/docs#pick), it will return the whole model with the exception of the values passed.
 
 Putting the same value in both `pick` and `omit` will cause the value to be ommitted. Put another way: `omit` overrides `pick`.
+
+### `?whereKey` with `&whereValue`
+Performs a [`_.where`](http://lodash.com/docs#where) lookup on a GET request for a collection. This is a good way to filter down the results. Perhaps even limit to a specific id.
+
+`curl http://localhost:8000/collection/url?whereKey=_id&whereValue=2`
+
+Returns an array of matches
 
 ## REST routes created
 
@@ -167,6 +176,9 @@ npm test
 ```
 
 ## Changelog
+
+### 0.2.22
+**new** add `?whereKey=&whereValue=` filtering options for GET requests on a collection.
 
 ### 0.2.21
 * **new** allow routes to not be assigned automatically on resource init by passing the `assignRoutes: false` in the options. You can then assign them with `resource.assignRoutes()`. This is handy if you want to override the CRUD methods.
