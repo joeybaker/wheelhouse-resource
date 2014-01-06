@@ -948,7 +948,7 @@ describe('Resources:', function(){
     var config
       , url = '/params'
       , data = [
-        {id: 1, value1: 'id1: 1', value2: 'id1: 2'}
+        {id: 1, value1: 'id1: 1', value2: 'id1: 2', integer: 3, dec: 4.5}
         , {id: 2, value1: 'id2: 1', value2: 'id2: 2'}
       ]
 
@@ -976,7 +976,6 @@ describe('Resources:', function(){
         }
       }, function(err, res, body){
         expect(err).to.not.exist
-        // expect(body).to.deep.equal(_.map(data, function(model){ return {value1: model.value1}}))
         expect(body).to.deep.equal(_.pick(data[0], 'value1'))
         done()
       })
@@ -991,7 +990,6 @@ describe('Resources:', function(){
         }
       }, function(err, res, body){
         expect(err).to.not.exist
-        // expect(body).to.deep.equal(_.map(data, function(model){ return {value1: model.value1}}))
         expect(body).to.deep.equal(_.omit(data[0], 'value1'))
         done()
       })
@@ -1006,7 +1004,6 @@ describe('Resources:', function(){
         }
       }, function(err, res, body){
         expect(err).to.not.exist
-        // expect(body).to.deep.equal(_.map(data, function(model){ return {value1: model.value1}}))
         expect(body).to.deep.equal(data.map(function(model){
           return _.pick(model, 'value1')
         }))
@@ -1023,10 +1020,54 @@ describe('Resources:', function(){
         }
       }, function(err, res, body){
         expect(err).to.not.exist
-        // expect(body).to.deep.equal(_.map(data, function(model){ return {value1: model.value1}}))
         expect(body).to.deep.equal(data.map(function(model){
           return _.omit(model, 'value1')
         }))
+        done()
+      })
+    })
+
+    it('filters attributes for a collection GET on `?whereValue` with an int', function(done){
+      request({
+        url: 'http://' + path.join('localhost:' + port, url)
+        , json: true
+        , qs: {
+          whereKey: 'id'
+          , whereValue: 2
+        }
+      }, function(err, res, body){
+        expect(err).to.not.exist
+        expect(body).to.deep.equal(_.where(data, {id: 2}))
+        done()
+      })
+    })
+
+    it('filters attributes for a collection GET on `?whereValue` with a float', function(done){
+      request({
+        url: 'http://' + path.join('localhost:' + port, url)
+        , json: true
+        , qs: {
+          whereKey: 'dec'
+          , whereValue: 4.5
+        }
+      }, function(err, res, body){
+        expect(err).to.not.exist
+        expect(body).to.deep.equal(_.where(data, {dec: 4.5}))
+        done()
+      })
+    })
+
+    it('filters attributes for a collection GET on `?whereValue` with a string', function(done){
+      request({
+        url: 'http://' + path.join('localhost:' + port, url)
+        , json: true
+        , qs: {
+          whereKey: 'value1'
+          , whereValue: 'id1: 1'
+        }
+      }, function(err, res, body){
+        expect(err).to.not.exist
+        expect(body).to.deep.equal(_.where(data, {value1: 'id1: 1'}))
         done()
       })
     })
