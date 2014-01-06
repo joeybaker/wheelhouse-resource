@@ -94,7 +94,7 @@ module.exports = function(grunt){
         }
       }
       , gitCommitPackage: {
-        command: 'git commit --amend -i package.json --reuse-message HEAD'
+        command: 'git commit -i -s package.json -m"v<%= grunt.file.readJSON("package.json").version %>"'
         , options: {
           stdout: true
           , failOnError: true
