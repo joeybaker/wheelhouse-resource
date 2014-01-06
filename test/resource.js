@@ -976,7 +976,6 @@ describe('Resources:', function(){
         }
       }, function(err, res, body){
         expect(err).to.not.exist
-        // expect(body).to.deep.equal(_.map(data, function(model){ return {value1: model.value1}}))
         expect(body).to.deep.equal(_.pick(data[0], 'value1'))
         done()
       })
@@ -991,7 +990,6 @@ describe('Resources:', function(){
         }
       }, function(err, res, body){
         expect(err).to.not.exist
-        // expect(body).to.deep.equal(_.map(data, function(model){ return {value1: model.value1}}))
         expect(body).to.deep.equal(_.omit(data[0], 'value1'))
         done()
       })
@@ -1006,7 +1004,6 @@ describe('Resources:', function(){
         }
       }, function(err, res, body){
         expect(err).to.not.exist
-        // expect(body).to.deep.equal(_.map(data, function(model){ return {value1: model.value1}}))
         expect(body).to.deep.equal(data.map(function(model){
           return _.pick(model, 'value1')
         }))
@@ -1023,7 +1020,6 @@ describe('Resources:', function(){
         }
       }, function(err, res, body){
         expect(err).to.not.exist
-        // expect(body).to.deep.equal(_.map(data, function(model){ return {value1: model.value1}}))
         expect(body).to.deep.equal(data.map(function(model){
           return _.omit(model, 'value1')
         }))
@@ -1041,7 +1037,6 @@ describe('Resources:', function(){
         }
       }, function(err, res, body){
         expect(err).to.not.exist
-        // expect(body).to.deep.equal(_.map(data, function(model){ return {value1: model.value1}}))
         expect(body).to.deep.equal(_.where(data, {id: 2}))
         done()
       })
@@ -1057,7 +1052,6 @@ describe('Resources:', function(){
         }
       }, function(err, res, body){
         expect(err).to.not.exist
-        // expect(body).to.deep.equal(_.map(data, function(model){ return {value1: model.value1}}))
         expect(body).to.deep.equal(_.where(data, {dec: 4.5}))
         done()
       })
@@ -1073,7 +1067,6 @@ describe('Resources:', function(){
         }
       }, function(err, res, body){
         expect(err).to.not.exist
-        // expect(body).to.deep.equal(_.map(data, function(model){ return {value1: model.value1}}))
         expect(body).to.deep.equal(_.where(data, {value1: 'id1: 1'}))
         done()
       })
