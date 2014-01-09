@@ -177,6 +177,9 @@ npm test
 
 ## Changelog
 
+### 0.2.23
+* updates and creates now handle model validation failures by returning a 422
+
 ### 0.2.22
 **new** add `?whereKey=&whereValue=` filtering options for GET requests on a collection.
 
