@@ -98,7 +98,11 @@ describe('Resources:', function(){
     function setup(name){
       var Collection = Backbone.Collection.extend({
           url: '/api/' + (name || 'collection')
-          , model: Backbone.Model.extend({})
+          , model: Backbone.Model.extend({
+            validate: function(attrs){
+              if (attrs.invalid) return 'invalid!'
+            }
+          })
         })
         , collection = new Collection()
 
@@ -167,6 +171,21 @@ describe('Resources:', function(){
       })
     })
 
+    it('returns an error on create if validation fails', function(done){
+      var name = 'creates/validation'
+        , collection = setup(name)
+
+      request.post({
+        url: 'http://localhost:' + port + '/api/' + name
+        , json: {invalid: 'created!'}
+      }, function(err, res, body){
+        should.not.exist(err)
+        res.statusCode.should.equal(422)
+        body.code.should.equal(422)
+        done()
+      })
+    })
+
     it('reads a collection', function(done){
       var name = 'readsAColleciton'
       setup(name)
@@ -212,6 +231,23 @@ describe('Resources:', function(){
         body.id.should.equal(1)
         cache['/api/' + name + '/1'].key.should.equal('updated!')
         collection.get(1).get('key').should.equal('updated!')
+        done()
+      })
+    })
+
+    it('returns an error if updates fail validation', function(done){
+      var name = 'updating'
+        , collection = setup(name)
+
+      collection.add({id: 1, key: 'not updated'}, {merge: true})
+      request.put({
+        url: 'http://localhost:' + port + '/api/' + name + '/1'
+        , json: {id: 1, invalid: true}
+      }, function(err, res, body){
+        should.not.exist(err)
+        res.statusCode.should.equal(422)
+        body.message.should.equal('invalid!')
+        collection.get(1).get('key').should.equal('not updated')
         done()
       })
     })
