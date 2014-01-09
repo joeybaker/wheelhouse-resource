@@ -173,7 +173,7 @@ describe('Resources:', function(){
 
     it('returns an error on create if validation fails', function(done){
       var name = 'creates/validation'
-        , collection = setup(name)
+      setup(name)
 
       request.post({
         url: 'http://localhost:' + port + '/api/' + name
