@@ -177,6 +177,9 @@ npm test
 
 ## Changelog
 
+### 0.2.24
+* fixes critical error in 0.2.23 with update validation
+
 ### 0.2.23
 * updates and creates now handle model validation failures by returning a 422
 
