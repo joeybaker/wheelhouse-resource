@@ -44,6 +44,22 @@ var flatiron = require('flatiron')
     }
     , maxSockets: 1000 // default. Set to a high value so that Server Sent Events can connect to many clients
     , assignRoutes: true // default. Set to false to manually assign routes.
+    , hooks: { // optional, you can define hooks to modify the data
+      read: function(collection, done){
+        // called after filter, pick, and permissions have been run
+        // called in the router context (`this.req`)
+        // e.g.…
+
+        app.db.get('something', function(err, res){
+          var modifiedCollection = collection.map(function(model){
+            model.newValue = res
+          })
+          // you must call the callback with the modified collection
+          done(modifiedCollection)
+        })
+      }
+    }
+    // there are currently no hooks for create, update, del
   })
 
 ```
@@ -95,7 +111,7 @@ resource.update = function(){
 resource.assignRoutes()
 ```
 
-## Modifying the returned data
+## Modifying the returned data via urls
 
 ### `?omit` and `?pick`
 Passing a `omit` or `pick` query to the url with a comma separated list of values will limit the data returned.
