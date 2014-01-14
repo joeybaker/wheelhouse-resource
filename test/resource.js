@@ -95,7 +95,7 @@ describe('Resources:', function(){
   })
 
   describe('a new resource', function(){
-    function setup(name){
+    function setup(name, options){
       var Collection = Backbone.Collection.extend({
           url: '/api/' + (name || 'collection')
           , model: Backbone.Model.extend({
@@ -106,13 +106,15 @@ describe('Resources:', function(){
         })
         , collection = new Collection()
 
+      options || (options = {})
+
       collection.reset()
       cache = {}
 
       collection.create({key: 'value1'})
       collection.create({key: 'value2'})
 
-      ;new Resource(collection, {app: app, nameRegEx: /\/api\/(.*)\/?/})
+      ;new Resource(collection, _.extend({app: app, nameRegEx: /\/api\/(.*)\/?/}, options))
       return collection
     }
 
@@ -214,6 +216,67 @@ describe('Resources:', function(){
       }, function(err, res, body){
         should.not.exist(err)
         body.id.should.equal(id)
+        done()
+      })
+    })
+
+    it('returns modified data on a read of a collection', function(done){
+      var name = 'readModification'
+
+      setup(name, {hooks: {read: function(collection, end){
+        var newCollection = _.map(collection, function(model){
+          model.addedValue = true
+          return model
+        })
+
+        should.exist(this.req)
+
+        // this should happen async
+        setImmediate(function(){
+          end(newCollection)
+        })
+      }}})
+
+      request.get({
+        url: 'http://localhost:' + port + '/api/' + name
+        , json: true
+      }, function(err, res, body){
+        should.not.exist(err)
+        body.length.should.be.above(0)
+        body.length.should.equal(2)
+        _.each(body, function(model){
+          model.should.include.key('addedValue')
+          model.addedValue.should.be.true
+        })
+        done()
+      })
+    })
+
+
+    it('returns modified data on a read of a model', function(done){
+      var name = 'readModelModification'
+        , collection = setup(name, {hooks: {read: function(collection, end){
+          var newCollection = _.map(collection, function(model){
+            model.addedValue = true
+            return model
+          })
+
+          // this should happen async
+          setImmediate(function(){
+            end(newCollection)
+          })
+        }}})
+
+      request.get({
+        url: 'http://localhost:' + port + '/api/' + name + '/' + collection.last().id
+        , json: true
+      }, function(err, res, body){
+        should.not.exist(err)
+        res.statusCode.should.equal(200)
+        body.should.be.not.be.an.array
+        body.should.include.key('addedValue')
+        body.id.should.equal(collection.last().id)
+        body.addedValue.should.be.true
         done()
       })
     })
