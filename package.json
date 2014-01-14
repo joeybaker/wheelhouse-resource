@@ -1,6 +1,6 @@
 {
   "name": "wheelhouse-resource",
-  "version": "0.2.24",
+  "version": "0.2.25",
   "description": "RESTful routes for wheelhouse with permissions and filtering.",
   "main": "index.js",
   "directories": {
