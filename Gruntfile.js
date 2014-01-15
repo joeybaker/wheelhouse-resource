@@ -18,6 +18,10 @@ module.exports = function(grunt){
         jshintrc: '.jshintrc'
       }
     }
+    , jscs: {
+      options: {}
+      , all: '<%= jshint.all %>'
+    }
     , bump: {
       patch: {
         options: {
@@ -142,6 +146,7 @@ module.exports = function(grunt){
     'shell:gitRequireCleanTree'
     , 'shell:gitPullRebase'
     , 'jshint'
+    , 'jscs'
     , 'shell:npmTest'
     , 'bump:' + (grunt.option('bump') || 'patch')
     , 'shell:gitCommitPackage'
