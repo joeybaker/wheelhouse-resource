@@ -193,6 +193,9 @@ npm test
 
 ## Changelog
 
+### 0.2.25
+Use the pre-parsed querystring instead of trying to parse it ourselves.
+
 ### 0.2.24
 * fixes critical error in 0.2.23 with update validation
 
