@@ -27,7 +27,8 @@
     "grunt-contrib-jshint": "~0.7.0",
     "eventsource": "0.0.7",
     "sinon": "~1.7.3",
-    "grunt-jscs-checker": "~0.3.2"
+    "grunt-jscs-checker": "~0.3.2",
+    "matchdep": "~0.3.0"
   },
   "scripts": {
     "test": "mocha"

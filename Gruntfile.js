@@ -135,11 +135,7 @@ module.exports = function(grunt){
     }
   })
 
-  grunt.loadNpmTasks('grunt-contrib-jshint')
-  grunt.loadNpmTasks('grunt-simple-mocha')
-  grunt.loadNpmTasks('grunt-notify')
-  grunt.loadNpmTasks('grunt-shell')
-  grunt.loadNpmTasks('grunt-bumpx')
+  require('matchdep').filterDev('grunt-*').forEach(grunt.loadNpmTasks)
 
   grunt.registerTask('test', ['simplemocha'])
   grunt.registerTask('publish', [
