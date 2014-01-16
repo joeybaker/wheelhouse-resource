@@ -25,7 +25,8 @@ describe('Resources:', function(){
     // shut the damn logs up
     app.options.log = {console: {silent: true}}
 
-    // testing only implementation of Backbone.Sync. Really, wheelhouse should have done this for us with something like wheelhouse-couch
+    // testing only implementation of Backbone.Sync.
+    // Really, wheelhouse should have done this for us with something like wheelhouse-couch
     Backbone.sync = function(method, model, options){
       var success = options.success || function(){}
 
@@ -252,7 +253,6 @@ describe('Resources:', function(){
       })
     })
 
-
     it('returns modified data on a read of a model', function(done){
       var name = 'readModelModification'
         , collection = setup(name, {hooks: {read: function(collection, end){
@@ -413,7 +413,7 @@ describe('Resources:', function(){
 
     before(function(){
       _.each([1,2,3,4,5,6,7,8,9,10], function(i){
-        permFilterCollection.add({id: (100+i), key: 'value ' + i})
+        permFilterCollection.add({id: (100 + i), key: 'value ' + i})
       })
     })
     afterEach(function(){
@@ -628,7 +628,8 @@ describe('Resources:', function(){
         , resource = new Resource(sseCollection, _.extend({app: app}, options || {}))
 
       // fake being a client that can receive sse events
-      clientEvents = new EventSource('http://localhost:' + port + path.join(url, id ? encodeURIComponent(id) : '', '/subscribe'))
+      clientEvents = new EventSource('http://localhost:' + port +
+        path.join(url, id ? encodeURIComponent(id) : '', '/subscribe'))
 
       return {clientEvents: clientEvents, collection: sseCollection, resource: resource}
     }
@@ -823,7 +824,6 @@ describe('Resources:', function(){
             permissions: []
           })
           , clientEvents = config.clientEvents
-
 
         clientEvents.onerror = function(e){
           expect(e).to.equal('Access denied')
