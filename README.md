@@ -193,6 +193,9 @@ npm test
 
 ## Changelog
 
+### 0.2.26
+**Fixed** `?whereValue` can now be a string and start with a number.
+
 ### 0.2.25
 Use the pre-parsed querystring instead of trying to parse it ourselves.
 

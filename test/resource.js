@@ -1043,7 +1043,7 @@ describe('Resources:', function(){
     })
   })
 
-  describe('url params', function(){
+  describe('filtering attributes', function(){
     var config
       , url = '/params'
       , data = [
@@ -1066,7 +1066,7 @@ describe('Resources:', function(){
       config = setup(url, data)
     })
 
-    it('filters attributes for a model GET on `?pick`', function(done){
+    it('a model GET on `?pick`', function(done){
       request({
         url: 'http://' + path.join('localhost:' + port, url, '/1')
         , json: true
@@ -1080,7 +1080,7 @@ describe('Resources:', function(){
       })
     })
 
-    it('filters attributes for a model GET on `?omit`', function(done){
+    it('a model GET on `?omit`', function(done){
       request({
         url: 'http://' + path.join('localhost:' + port, url, '/1')
         , json: true
@@ -1094,7 +1094,7 @@ describe('Resources:', function(){
       })
     })
 
-    it('filters attributes for a collection GET on `?pick`', function(done){
+    it('a collection GET on `?pick`', function(done){
       request({
         url: 'http://' + path.join('localhost:' + port, url)
         , json: true
@@ -1110,7 +1110,7 @@ describe('Resources:', function(){
       })
     })
 
-    it('filters attributes for a collection GET on `?omit`', function(done){
+    it('a collection GET on `?omit`', function(done){
       request({
         url: 'http://' + path.join('localhost:' + port, url)
         , json: true
@@ -1126,7 +1126,7 @@ describe('Resources:', function(){
       })
     })
 
-    it('filters attributes for a collection GET on `?whereValue` with an int', function(done){
+    it('a collection GET on `?whereValue` with an int', function(done){
       request({
         url: 'http://' + path.join('localhost:' + port, url)
         , json: true
@@ -1141,7 +1141,7 @@ describe('Resources:', function(){
       })
     })
 
-    it('filters attributes for a collection GET on `?whereValue` with a float', function(done){
+    it('a collection GET on `?whereValue` with a float', function(done){
       request({
         url: 'http://' + path.join('localhost:' + port, url)
         , json: true
@@ -1156,7 +1156,7 @@ describe('Resources:', function(){
       })
     })
 
-    it('filters attributes for a collection GET on `?whereValue` with a string', function(done){
+    it('a collection GET on `?whereValue` with a string', function(done){
       request({
         url: 'http://' + path.join('localhost:' + port, url)
         , json: true
@@ -1167,6 +1167,21 @@ describe('Resources:', function(){
       }, function(err, res, body){
         expect(err).to.not.exist
         expect(body).to.deep.equal(_.where(data, {value1: 'id1: 1'}))
+        done()
+      })
+    })
+
+    it('a collection GET on `?whereValue` with a string that starts with a number', function(done){
+      request({
+        url: 'http://' + path.join('localhost:' + port, url)
+        , json: true
+        , qs: {
+          whereKey: 'value1'
+          , whereValue: '3id1: 1'
+        }
+      }, function(err, res, body){
+        expect(err).to.not.exist
+        expect(body).to.deep.equal(_.where(data, {value1: '3id1: 1'}))
         done()
       })
     })
