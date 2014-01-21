@@ -193,7 +193,7 @@ npm test
 
 ## Changelog
 
-### 0.2.26
+### 0.2.27
 **Fixed** `?whereValue` can now be a string and start with a number.
 
 ### 0.2.25
