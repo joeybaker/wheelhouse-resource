@@ -31,7 +31,8 @@
     "matchdep": "~0.3.0"
   },
   "scripts": {
-    "test": "mocha"
+    "test": "node_modules/.bin/mocha"
+    , "dev": "nodemon -x npm -- test"
   },
   "repository": {
     "type": "git",
