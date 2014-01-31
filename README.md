@@ -191,7 +191,15 @@ Mocha tests.
 npm test
 ```
 
+```shell
+npm run dev # uses nodemon to run tests on file changes
+```
+
 ## Changelog
+
+### 0.2.29
+* Log out user id in more places if it exsists
+* Don't log out whole permission set on a read failure. This is just log spam.
 
 ### 0.2.28
 `whereValue` can be a boolean.
