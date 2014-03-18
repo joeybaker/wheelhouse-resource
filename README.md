@@ -199,6 +199,7 @@ npm run dev # uses nodemon to run tests on file changes
 
 ### 0.2.30
 * Ensure updates validate the incoming data
+* Less verbose logging
 
 ### 0.2.29
 * Log out user id in more places if it exsists
