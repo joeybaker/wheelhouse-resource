@@ -197,6 +197,9 @@ npm run dev # uses nodemon to run tests on file changes
 
 ## Changelog
 
+### 0.2.30
+* Ensure updates validate the incoming data
+
 ### 0.2.29
 * Log out user id in more places if it exsists
 * Don't log out whole permission set on a read failure. This is just log spam.
